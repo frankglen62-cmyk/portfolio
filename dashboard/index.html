@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Dev Server Dashboard</title>
+  <meta name="description" content="A local command center to start, stop, and monitor your portfolio development server.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0b0b0f;
+      --bg-light-blur: rgba(255, 255, 255, 0.03);
+      --border-light: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f3f7;
+      --text-muted: #9499b3;
+      --primary: #8839ef;
+      --primary-glow: rgba(136, 57, 239, 0.4);
+      --success: #40a02b;
+      --success-glow: rgba(64, 160, 43, 0.4);
+      --danger: #d20f39;
+      --danger-glow: rgba(210, 15, 57, 0.4);
+      --warning: #df8e1d;
+      --terminal-bg: #11111b;
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 50%, #1e1e2e 0%, var(--bg-dark) 100%);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-x: hidden;
+    }
+
+    /* Glow Elements */
+    .glow-bg {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(136, 57, 239, 0.08) 0%, rgba(0,0,0,0) 70%);
+      top: -100px;
+      left: -100px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-bg-secondary {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(64, 160, 43, 0.05) 0%, rgba(0,0,0,0) 70%);
+      bottom: -100px;
+      right: -100px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Card Layout */
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 900px;
+      background: var(--bg-light-blur);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Header styling */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 1.5rem;
+    }
+
+    .title-area h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #f3f3f7 30%, #a6adc8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.25rem;
+    }
+
+    .title-area p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Status badge */
+    .status-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.5rem 1rem;
+      border-radius: 99px;
+      border: 1px solid var(--border-light);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+      position: relative;
+    }
+
+    .status-dot.active {
+      background-color: var(--success);
+      box-shadow: 0 0 12px var(--success);
+    }
+    
+    .status-dot.active::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      border: 3px solid var(--success);
+      border-radius: 50%;
+      animation: pulse 1.8s infinite ease-out;
+      opacity: 0;
+    }
+
+    .status-dot.stopped {
+      background-color: var(--danger);
+      box-shadow: 0 0 12px var(--danger);
+    }
+
+    .status-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Grid Area for Action Buttons */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* Button Styling */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1.1rem 1.5rem;
+      border-radius: 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: var(--transition);
+      user-select: none;
+      text-decoration: none;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #40a02b 0%, #308020 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(64, 160, 43, 0.2);
+    }
+
+    .btn-start:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px var(--success-glow);
+      filter: brightness(1.1);
+    }
+
+    .btn-start:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #d20f39 0%, #a60a28 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(210, 15, 57, 0.2);
+    }
+
+    .btn-stop:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px var(--danger-glow);
+      filter: brightness(1.1);
+    }
+
+    .btn-stop:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-launch {
+      background: linear-gradient(135deg, var(--primary) 0%, #722ed1 100%);
+      color: white;
+      box-shadow: 0 8px 20px rgba(136, 57, 239, 0.2);
+    }
+
+    .btn-launch:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px var(--primary-glow);
+      filter: brightness(1.1);
+    }
+
+    .btn-launch:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Terminal Console */
+    .terminal-container {
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+
+    .terminal-header {
+      background: rgba(255,255,255,0.02);
+      padding: 0.75rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .terminal-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .terminal-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .terminal-dot.red { background: #ff5f56; }
+    .terminal-dot.yellow { background: #ffbd2e; }
+    .terminal-dot.green { background: #27c93f; }
+
+    .terminal-body {
+      background: var(--terminal-bg);
+      padding: 1.2rem;
+      height: 280px;
+      overflow-y: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #cdd6f4;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Custom Scrollbar for Terminal */
+    .terminal-body::-webkit-scrollbar {
+      width: 8px;
+    }
+    .terminal-body::-webkit-scrollbar-track {
+      background: var(--terminal-bg);
+    }
+    .terminal-body::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+    }
+    .terminal-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Footer styling */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .shutdown-link {
+      color: var(--danger);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .shutdown-link:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      70% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 1.5rem;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      .status-container {
+        align-self: flex-start;
+      }
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+  <div class="glow-bg-secondary"></div>
+
+  <main class="container">
+    <header>
+      <div class="title-area">
+        <h1>Portfolio Dev Command Center</h1>
+        <p>Vite Localhost Server Control Deck</p>
+      </div>
+      <div class="status-container">
+        <div id="statusDot" class="status-dot"></div>
+        <span id="statusLabel" class="status-label">Checking...</span>
+      </div>
+    </header>
+
+    <section class="controls-grid">
+      <button id="startBtn" class="btn btn-start" onclick="startServer()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Start Server
+      </button>
+      <button id="stopBtn" class="btn btn-stop" onclick="stopServer()" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect></svg>
+        Stop Server
+      </button>
+      <a id="launchBtn" class="btn btn-launch" href="http://localhost:5173" target="_blank" disabled onclick="return checkLaunchActive(event)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        Open Portfolio
+      </a>
+    </section>
+
+    <section class="terminal-container">
+      <div class="terminal-header">
+        <div class="terminal-title">
+          <span style="color:var(--primary);">>_</span> dev-server-terminal
+        </div>
+        <div class="terminal-actions">
+          <div class="terminal-dot red"></div>
+          <div class="terminal-dot yellow"></div>
+          <div class="terminal-dot green"></div>
+        </div>
+      </div>
+      <div id="terminalBody" class="terminal-body">Connecting to logs...</div>
+    </section>
+
+    <footer>
+      <div>Control Server: <strong>localhost:9000</strong></div>
+      <button class="shutdown-link" onclick="shutdownPanel()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+        Close Control Panel
+      </button>
+    </footer>
+  </main>
+
+  <script>
+    const statusDot = document.getElementById('statusDot');
+    const statusLabel = document.getElementById('statusLabel');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const launchBtn = document.getElementById('launchBtn');
+    const terminalBody = document.getElementById('terminalBody');
+
+    let serverRunning = false;
+    let eventSource = null;
+
+    // Connect to Server-Sent Events for status & live logs
+    function connectSSE() {
+      if (eventSource) {
+        eventSource.close();
+      }
+
+      eventSource = new EventSource('/api/logs');
+
+      eventSource.onopen = () => {
+        console.log('SSE connection opened.');
+      };
+
+      eventSource.onerror = (err) => {
+        console.error('SSE connection error, retrying...', err);
+        updateUIState(false);
+        statusLabel.innerText = "Offline";
+        statusDot.className = "status-dot stopped";
+        // try to reconnect in 3 seconds
+        setTimeout(connectSSE, 3000);
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          
+          if (message.type === 'status') {
+            updateUIState(message.running);
+          } else if (message.type === 'logs') {
+            // Append and scroll to bottom
+            const atBottom = isTerminalAtBottom();
+            
+            // Clean up ANSI escape sequences from logs for cleaner presentation
+            const cleanData = cleanAnsiEscapeCodes(message.data);
+            
+            if (terminalBody.innerText === 'Connecting to logs...') {
+              terminalBody.innerText = '';
+            }
+            
+            terminalBody.innerText += cleanData;
+
+            // Keep buffer reasonable length
+            if (terminalBody.innerText.length > 50000) {
+              terminalBody.innerText = terminalBody.innerText.substring(terminalBody.innerText.length - 20000);
+            }
+
+            if (atBottom) {
+              terminalBody.scrollTop = terminalBody.scrollHeight;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse SSE payload', e);
+        }
+      };
+    }
+
+    function isTerminalAtBottom() {
+      // Allow 15px threshold
+      return (terminalBody.scrollHeight - terminalBody.offsetHeight - terminalBody.scrollTop) < 15;
+    }
+
+    function cleanAnsiEscapeCodes(str) {
+      // Regular expression to strip ANSI color escape codes
+      return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZh-npxys1m]/g, '');
+    }
+
+    function updateUIState(running) {
+      serverRunning = running;
+      if (running) {
+        statusDot.className = "status-dot active";
+        statusLabel.innerText = "Running";
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        launchBtn.removeAttribute('disabled');
+        launchBtn.style.pointerEvents = 'auto';
+        launchBtn.style.opacity = '1';
+      } else {
+        statusDot.className = "status-dot stopped";
+        statusLabel.innerText = "Stopped";
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        launchBtn.setAttribute('disabled', 'true');
+        launchBtn.style.pointerEvents = 'none';
+        launchBtn.style.opacity = '0.35';
+      }
+    }
+
+    function checkLaunchActive(e) {
+      if (!serverRunning) {
+        e.preventDefault();
+        return false;
+      }
+      return true;
+    }
+
+    async function startServer() {
+      startBtn.disabled = true;
+      try {
+        const res = await fetch('/api/start', { method: 'POST' });
+        const data = await res.json();
+        console.log(data.message);
+      } catch (e) {
+        console.error('Failed to start server:', e);
+        startBtn.disabled = false;
+        alert('Failed to connect to control panel. Make sure the cmd window is open!');
+      }
+    }
+
+    async function stopServer() {
+      stopBtn.disabled = true;
+      try {
+        const res = await fetch('/api/stop', { method: 'POST' });
+        const data = await res.json();
+        console.log(data.message);
+      } catch (e) {
+        console.error('Failed to stop server:', e);
+        stopBtn.disabled = false;
+        alert('Failed to stop Vite dev server.');
+      }
+    }
+
+    async function shutdownPanel() {
+      const confirmShutdown = confirm("Shutting down will stop the control panel and close your live Vite project. Are you sure?");
+      if (!confirmShutdown) return;
+
+      try {
+        terminalBody.innerText += "\n[System] Shutting down controller...\n";
+        terminalBody.scrollTop = terminalBody.scrollHeight;
+        
+        await fetch('/api/shutdown', { method: 'POST' });
+        setTimeout(() => {
+          window.close();
+          document.body.innerHTML = `
+            <div style="text-align: center; padding: 3rem; font-family: sans-serif; color: #9499b3;">
+              <h1 style="color: #f3f3f7; margin-bottom: 1rem;">Control Panel Stopped</h1>
+              <p>The control panel server has been shutdown. You can close this browser tab now.</p>
+            </div>
+          `;
+        }, 800);
+      } catch (e) {
+        console.error('Shutdown request failed:', e);
+        alert('Shutdown command sent, closing browser tab.');
+      }
+    }
+
+    // Start logs connection
+    connectSSE();
+  </script>
+</body>
+</html>

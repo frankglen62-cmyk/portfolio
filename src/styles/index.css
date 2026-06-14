@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Archivo:ital,wght@0,100..900;1,100..900&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+   Theme Tokens — Exact Prolific Design System
+   Colors extracted directly from Framer CSS custom properties
+   ============================================================ */
+@theme {
+  /* Core Palette — from Prolific reference */
+  --color-white: #ffffff;
+  --color-cream: #f1efe9;
+  --color-cream-light: #faf9f6;
+  --color-cream-dark: #e3e3e3;
+  --color-yellow: #f6df6b;
+  --color-yellow-soft: #fcf1b6;
+  --color-yellow-pale: #fdfae6;
+  --color-orange: #fdb466;
+  --color-gold: #f6df6b;
+  --color-green: #147033;
+  --color-green-light: #d5e399;
+
+  /* Neutrals */
+  --color-dark: #1e1e1e;
+  --color-dark-soft: #3d3d3d;
+  --color-black: #000000;
+  --color-gray: #b8b8b8;
+  --color-gray-light: #d4d4d4;
+  --color-text: #1e1e1e;
+  --color-text-muted: #6a6e72;
+
+  /* Borders */
+  --color-border: rgba(30, 30, 30, 0.12);
+  --color-border-light: rgba(30, 30, 30, 0.06);
+
+  /* Typography — Prolific font stack */
+  --font-display: 'Archivo', sans-serif;
+  --font-heading: 'Playfair Display', 'Georgia', serif;
+  --font-body: 'Instrument Sans', 'Inter', sans-serif;
+  --font-ui: 'Montserrat', sans-serif;
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 810px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-cream);
+    overflow-x: clip;
+  }
+
+  /* Sticky Card Stacking Effect (Prolific Style) */
+  section {
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.08); /* Soft shadow over previous section */
+    /* Use flex-start instead of center to prevent massive gaps when content is small */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  /* The very first section shouldn't have the top rounded corners or shadow if it's the top of the page */
+  section#home {
+    position: relative; /* Hero scrolls up normally */
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  section#about { z-index: 2; }
+  section#tools { z-index: 3; }
+  section#social-platforms { z-index: 4; }
+  section#services { 
+    z-index: 5; 
+    position: relative !important;
+    display: block !important;
+    min-height: auto !important;
+  }
+  section#portfolio { z-index: 6; }
+  section#skills { z-index: 7; }
+  section#certifications { z-index: 8; }
+  section#why-hire-me { z-index: 9; }
+  section#contact { z-index: 10; }
+  section#footer { z-index: 11; position: relative; border-radius: 0; box-shadow: none; }
+
+  ::selection {
+    background-color: var(--color-yellow);
+    color: var(--color-dark);
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--color-cream); }
+  ::-webkit-scrollbar-thumb { background: var(--color-gray); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-dark-soft); }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: var(--color-dark);
+  }
+}
+
+/* ============================================================
+   Utility Classes — Prolific Aesthetic
+   ============================================================ */
+@layer utilities {
+  .glass-nav {
+    background: rgba(241, 239, 233, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(30, 30, 30, 0.05);
+  }
+
+  .glass-dark {
+    background: rgba(30, 30, 30, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-warm {
+    background: rgba(241, 239, 233, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(30, 30, 30, 0.08);
+  }
+
+  .font-serif-display {
+    font-family: var(--font-heading);
+    letter-spacing: 0.04em;
+  }
+}
