@@ -12,7 +12,7 @@ export const useTypewriter = (
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: any;
 
     const currentWord = words[wordIndex];
 
