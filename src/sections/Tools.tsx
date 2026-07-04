@@ -22,6 +22,8 @@ const tools = [
   { name: 'Shopify', id: 'shopify.svg' },
   { name: 'MailChimp', id: 'mailchimp.svg' },
   { name: 'ChatGPT', id: 'chatgpt.svg' },
+  { name: 'Gemini', id: 'gemini.svg' },
+  { name: 'Claude', id: 'claude.svg' },
   { name: 'Capcut', id: 'capcut.svg' },
   { name: 'Meta Business Suite', id: 'meta-business-suite.svg' },
   { name: 'Ads Library', id: 'meta-ads-library.svg' },
