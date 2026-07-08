@@ -21,22 +21,22 @@ function layoutConfigPlugin() {
     buildStart() {
       syncPublic();
     },
-    configureServer(server) {
+    configureServer(server: any) {
       syncPublic();
-      server.middlewares.use(async (req, res, next) => {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
         if (req.url === '/api/layout-config' && req.method === 'GET') {
           try {
             const data = fs.readFileSync(srcPath(), 'utf-8');
             res.setHeader('Content-Type', 'application/json');
             res.statusCode = 200;
             res.end(data);
-          } catch (err) {
+          } catch (err: any) {
             res.statusCode = 500;
             res.end(JSON.stringify({ error: err.message }));
           }
         } else if (req.url === '/api/save-config' && req.method === 'POST') {
           let body = '';
-          req.on('data', chunk => { body += chunk.toString(); });
+          req.on('data', (chunk: any) => { body += chunk.toString(); });
           req.on('end', () => {
             try {
               const parsed = JSON.parse(body);
@@ -46,7 +46,7 @@ function layoutConfigPlugin() {
               res.setHeader('Content-Type', 'application/json');
               res.statusCode = 200;
               res.end(JSON.stringify({ success: true }));
-            } catch (err) {
+            } catch (err: any) {
               console.error(err);
               res.statusCode = 500;
               res.end(JSON.stringify({ error: err.message }));
