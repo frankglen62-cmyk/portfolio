@@ -19,7 +19,7 @@ export const SocialMediaPlatforms: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="social-platforms" ref={sectionRef} className="pt-28 md:pt-40 pb-12 md:pb-16 bg-cream relative overflow-hidden">
+    <section id="social-platforms" ref={sectionRef} className="pt-28 md:pt-40 pb-12 md:pb-16 overflow-hidden" style={{ background: 'linear-gradient(180deg, #d8dbdf 0%, #e2e4e8 50%, #ecedef 100%)' }}>
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
         {/* Section Header */}
         <ScrollReveal className="text-center mb-16 md:mb-20">

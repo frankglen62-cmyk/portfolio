@@ -13,7 +13,7 @@ export const WhyHireMe: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="why-hire-me" ref={sectionRef} className="py-28 md:py-40 bg-yellow relative overflow-hidden">
+    <section id="why-hire-me" ref={sectionRef} className="py-16 md:py-24 overflow-hidden" style={{ background: 'linear-gradient(180deg, #ecedef 0%, #e2e4e8 50%, #d8dbdf 100%)' }}>
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
         {/* Section Header — matching Prolific style */}
         <ScrollReveal className="text-center mb-16 md:mb-20">

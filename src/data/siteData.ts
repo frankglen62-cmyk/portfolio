@@ -2,22 +2,22 @@ import type { SiteData } from '../types';
 
 export const siteData: SiteData = {
   name: 'Frank Glen Martin',
-  title: 'Freelance Virtual Assistant',
-  tagline: 'Digital Marketing · Website Design',
+  title: 'Ecommerce Virtual Assistant',
+  tagline: 'Product Listings · Marketplace Management · Store Operations',
   nav: [
     { label: 'Home', href: '#home' },
-    { label: 'About', href: '#about' },
     { label: 'Services', href: '#services' },
-    { label: 'Portfolio', href: '#portfolio' },
     { label: 'Skills', href: '#skills' },
+    { label: 'My Project', href: '#portfolio' },
+    { label: 'Tools', href: '#tools' },
     { label: 'Contact', href: '#contact' },
   ],
   hero: {
-    headline: 'Helping Businesses Stay Organized & Scalable',
+    headline: 'Ecommerce Virtual Assistant for Product Listings & Online Store Support',
     subtext:
-      'Professional Virtual Assistant specializing in operations, admin systems, and digital workflow management.',
-    ctaPrimary: 'View My Work',
-    ctaSecondary: "Let's Work Together",
+      'I help ecommerce businesses manage product listings, optimize marketplace content, research products, update inventory, process orders, and support daily store operations across eBay, Shopify, Amazon, Poshmark, and other online platforms.',
+    ctaPrimary: 'View My Services',
+    ctaSecondary: 'See My Skills',
   },
   about: {
     bio: 'I am a highly experienced Virtual Assistant with over 4 years of experience in Upwork. I help business owners with general virtual assistant tasks so that they can run their own business. My bachelor\'s degree in Communications has helped me become one of the best in the industry.',

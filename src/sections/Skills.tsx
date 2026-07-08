@@ -1,113 +1,91 @@
 import React, { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { ScrollReveal } from '../components/animations/ScrollReveal';
+import { HoverExpand } from '../components/ui/hover-expand';
+import { WordPullUp } from '../components/animations/WordPullUp';
 
-const skillCategories = [
+const accordionSkills = [
   {
-    title: 'Product & Market Research',
-    items: ['Product Research', 'Online Research', 'Competitor Analysis'],
+    label: 'Ecommerce Platforms',
+    sublabel: 'PLATFORMS',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Ecommerce dashboard collage with marketplace platform cards',
+    description: 'Marketplace and store admin systems used for daily ecommerce operations',
+    detailTags: ['eBay Seller Hub', 'Shopify Admin', 'Amazon Seller Central', 'Walmart Marketplace', 'Etsy Shop Manager', 'Poshmark']
   },
   {
-    title: 'Listing Optimization',
-    items: ['Title Building and SEO Optimization', 'Product Title and Description Optimization', 'SEO Keyword Research', 'Description Writing'],
+    label: 'Product Listing',
+    sublabel: 'LISTING',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Product listing dashboard with ecommerce product table',
+    description: 'Clean, searchable product pages with complete item details and organized SKUs',
+    detailTags: ['Product Titles', 'Descriptions', 'Bullet Points', 'Categories', 'Item Specifics', 'Variations', 'SKU Organization']
   },
   {
-    title: 'Store & Order Management',
-    items: ['Store Management', 'Inventory Management', 'Order Fulfillment', 'eCommerce Marketing Support'],
+    label: 'SEO & Optimization',
+    sublabel: 'SEARCH',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Ecommerce SEO analytics and marketplace optimization dashboard',
+    description: 'Keyword-led listing improvements for stronger marketplace search visibility',
+    detailTags: ['Keyword Research', 'SEO Titles', 'Search Descriptions', 'eBay Item Specifics', 'Amazon Bullets', 'Shopify Meta Tags']
   },
   {
-    title: 'Platform Expertise',
-    items: ['Amazon Product Listing', 'Shopify Store Setup', 'eBay Dropshipping Support', 'Poshmark Product Listing', 'Cross Posting', 'Product Listing'],
+    label: 'Product Research',
+    sublabel: 'RESEARCH',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Ecommerce research dashboard with charts and product insights',
+    description: 'Demand, competitor, pricing, and supplier research for smarter listing decisions',
+    detailTags: ['Demand Research', 'Competitor Analysis', 'Pricing Research', 'Supplier Research', 'Trend Checking', 'Profitable Products']
   },
+  {
+    label: 'Inventory & Orders',
+    sublabel: 'MANAGEMENT',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Inventory and order management dashboard for ecommerce stores',
+    description: 'Reliable stock, order, fulfillment, tracking, and returns support',
+    detailTags: ['Inventory Monitoring', 'Stock Updates', 'Price Adjustments', 'Order Processing', 'Tracking Updates', 'Returns']
+  },
+  {
+    label: 'Data Management',
+    sublabel: 'DATA',
+    image: '/ecommerce-skills-dashboard.png',
+    imageAlt: 'Ecommerce data management dashboard with CSV and spreadsheet widgets',
+    description: 'Spreadsheet, CSV, and reporting workflows that keep store data tidy',
+    detailTags: ['Microsoft Excel', 'Google Sheets', 'CSV Imports', 'CSV Exports', 'Bulk Updates', 'Reports']
+  }
 ];
-
-// Helper to animate words sequentially
-const StaggeredText: React.FC<{ text: string }> = ({ text }) => {
-  const words = text.split(' ');
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
-
-  return (
-    <span ref={ref} className="inline-flex flex-wrap gap-x-[0.3em]">
-      {words.map((word, i) => (
-        <span key={i} className="overflow-hidden inline-block">
-          <motion.span
-            initial={{ y: '100%', opacity: 0 }}
-            animate={isInView ? { y: 0, opacity: 1 } : { y: '100%', opacity: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
-            className="inline-block"
-          >
-            {word}
-          </motion.span>
-        </span>
-      ))}
-    </span>
-  );
-};
 
 export const Skills: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="skills" ref={sectionRef} className="py-28 md:py-40 bg-white relative overflow-hidden">
-      <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12">
-        {/* Section Header */}
-        <div className="text-center mb-24">
-          <motion.span 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-dark/60 mb-4 block"
-          >
-            What I Do Best
-          </motion.span>
-          <h2 className="font-serif-display text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-dark tracking-tight leading-none mb-6">
-            <StaggeredText text="Personal Skills" />
-          </h2>
-        </div>
+    <section id="skills" ref={sectionRef} className="py-20 md:py-28 relative overflow-hidden" style={{ backgroundColor: '#f9f9f9', color: '#1a1a1a' }}>
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12">
+        
+        {/* Header */}
+        <ScrollReveal className="mb-8 text-center">
+          <span className="font-body text-[13px] font-medium text-dark/45 mb-3 block">
+            E-Commerce Expertise
+          </span>
+          <WordPullUp
+            words="My Skills"
+            className="font-body text-[clamp(2.8rem,6vw,5rem)] font-medium leading-none text-dark tracking-normal"
+            wrapperFramerProps={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0, transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
+            }}
+          />
+          <div className="w-12 h-[2px] bg-yellow mt-4 mx-auto" />
+        </ScrollReveal>
 
-        {/* Minimalist Editorial List */}
-        <div className="flex flex-col border-t border-dark/10">
-          {skillCategories.map((cat, index) => (
-            <motion.div
-              key={cat.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: index * 0.1 }}
-              className="py-12 md:py-16 border-b border-dark/10 group flex flex-col md:flex-row md:items-start gap-6 md:gap-12 transition-colors duration-500 hover:bg-dark/[0.02]"
-            >
-              {/* Index Number */}
-              <div className="font-ui text-sm font-medium text-dark/30 w-12 hidden md:block">
-                {(index + 1).toString().padStart(2, '0')}
-              </div>
-              
-              {/* Category Title */}
-              <div className="flex-1">
-                <h3 className="font-serif-display font-bold text-3xl md:text-5xl text-dark tracking-tight group-hover:pl-4 transition-all duration-500 ease-out">
-                  {cat.title}
-                </h3>
-              </div>
-
-              {/* Skills Items */}
-              <div className="flex-1 md:max-w-md pt-2">
-                <ul className="flex flex-wrap gap-2">
-                  {cat.items.map((item, i) => (
-                    <motion.li 
-                      key={item}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.2 + (i * 0.05), duration: 0.5 }}
-                      className="px-4 py-2 bg-cream text-dark/80 text-sm font-medium rounded-full border border-dark/5"
-                    >
-                      {item}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        <ScrollReveal className="w-full mt-6">
+          <HoverExpand 
+            items={accordionSkills} 
+            collapsedHeight={74} 
+            expandedHeight={320} 
+            className="w-full text-[#1a1a1a]"
+          />
+        </ScrollReveal>
+        
       </div>
     </section>
   );

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion';
 import { ScrollReveal } from '../components/animations/ScrollReveal';
 
 const services = [
@@ -36,55 +36,83 @@ const services = [
 ];
 
 /* 
-  Card Component 
-  Receives the global scroll progress of the entire section.
+  Scroll-Linked Card Component 
 */
-const ServiceCard: React.FC<{
+const ScrollLinkedCard: React.FC<{
   service: typeof services[0];
   index: number;
-  totalCards: number;
-  progress: MotionValue<number>;
-}> = ({ service, index, totalCards, progress }) => {
+  currentIndex: MotionValue<number>;
+}> = ({ service, index, currentIndex }) => {
+  const offsetIndex = useTransform(currentIndex, (current) => index - current);
+
+  // yOffset: 
+  // If offset > 0 (future cards), they wait at the bottom of the screen.
+  // If offset < 0 (past cards), they move up slightly to stack behind.
+  const yOffset = useTransform(offsetIndex, (offset) => {
+    if (offset > 0) return offset * 1200; // Slide smoothly from far below screen
+    return offset * 40; // Move up (negative offset = negative Y) to form a stack
+  });
+
+  const scale = useTransform(offsetIndex, (offset) => {
+    if (offset > 0) return 1; // Stay full size while sliding up
+    return Math.max(1 + (offset * 0.05), 0.8); // Shrink as it gets pushed back
+  });
+
+  const opacity = useTransform(offsetIndex, (offset) => {
+    // Fade out slightly if it goes too far back, but keep mostly visible
+    if (offset < -3) return Math.max(1 + ((offset + 3) * 0.5), 0);
+    return 1;
+  });
+
+  const blurAmount = useTransform(offsetIndex, (offset) => {
+    if (offset < 0) return Math.abs(offset) * 2; // Blur background cards
+    return 0;
+  });
   
-  // Calculate when this specific card should start shrinking.
-  const startShrink = index / totalCards;
-  
-  // The card shrinks continuously as you scroll further down.
-  const scale = useTransform(progress, [startShrink, 1], [1, 0.85]);
+  const filter = useTransform(blurAmount, (b) => `blur(${b}px)`);
 
   return (
     <motion.div
       style={{
-        position: 'sticky',
-        // Smaller offset (12px) ensures the total accumulated offset across all cards 
-        // doesn't exceed the top padding, preventing text from peeking out!
-        top: `calc(15vh + ${index * 12}px)`,
-        zIndex: index + 1,
-        scale: index === totalCards - 1 ? 1 : scale,
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        x: '-50%',
+        y: useTransform(yOffset, val => `calc(-50% + ${val}px)`),
+        scale,
+        opacity,
+        filter,
+        zIndex: index, // HIGHER index means it renders ON TOP of previous cards!
         transformOrigin: 'top center',
       }}
-      className="w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white rounded-[2rem] overflow-hidden shadow-2xl border border-white/5"
+      className="w-[90vw] max-w-[500px] md:max-w-3xl overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] bg-[#1a1a1a]"
     >
-      {/* 
-        Force the card to be WIDE and SHORT
-        Added generous top padding (pt-14 md:pt-20) to ensure the text starts low enough 
-        that it won't be visible in the exposed "tabs" when cards stack.
-      */}
-      <div className="flex-[0.45] px-10 md:px-16 pt-14 md:pt-20 pb-10 md:pb-16 flex flex-col justify-center bg-white min-h-[300px] md:h-[400px]">
-        <h3 className="font-display font-bold text-3xl md:text-4xl lg:text-[2.5rem] text-dark mb-4 md:mb-6 tracking-tight leading-tight">
-          {service.title}
-        </h3>
-        <p className="font-body text-base md:text-lg text-dark/70 leading-relaxed max-w-md">
-          {service.desc}
-        </p>
-      </div>
-
-      <div className="flex-[0.55] relative overflow-hidden group min-h-[250px] md:h-[400px]">
-        <img
-          src={service.image}
-          alt={service.title}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+      <div className="flex aspect-[4/5] md:aspect-[16/10] w-full flex-col relative overflow-hidden h-full max-h-[70vh]">
+         {/* Blurred background image layer for smooth UI feel */}
+         <img
+           src={service.image}
+           className="absolute inset-0 h-full w-full object-cover scale-110"
+           style={{ filter: "blur(20px)", zIndex: 1, opacity: 0.6 }}
+         />
+         {/* Main image */}
+         <img
+           src={service.image}
+           className="absolute inset-0 h-full w-full object-cover"
+           style={{ zIndex: 2 }}
+         />
+         
+         {/* Dark overlay at bottom for text */}
+         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
+         
+         {/* Text Content Overlay */}
+         <div className="absolute bottom-0 w-full flex flex-col items-center justify-end p-6 md:p-10 text-center z-20 pb-10">
+           <h3 className="font-display font-bold text-white text-2xl md:text-4xl leading-tight mb-2 drop-shadow-lg">
+             {service.title}
+           </h3>
+           <p className="font-body text-white/80 text-sm md:text-lg max-w-lg line-clamp-3 md:line-clamp-none drop-shadow-md">
+             {service.desc}
+           </p>
+         </div>
       </div>
     </motion.div>
   );
@@ -94,43 +122,57 @@ const ServiceCard: React.FC<{
 export const Services: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Track the scroll progress of the ENTIRE section
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    // "start end" means progress=0 when top of section hits bottom of screen
-    // "end end" means progress=1 when bottom of section hits bottom of screen
     offset: ["start start", "end end"],
   });
+
+  // Apply a spring to the scroll progress to make the movement buttery smooth
+  // even if the user uses a stepped mouse wheel.
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 25,
+    mass: 0.5,
+    restDelta: 0.001
+  });
+
+  // We add a small buffer at the start (0.1) so the first card doesn't fly away instantly
+  // when the user arrives at the section. We also add a buffer at the end (0.9).
+  const currentIndex = useTransform(
+    smoothProgress, 
+    [0, 0.1, 0.9, 1], 
+    [0, 0, services.length - 1, services.length - 1]
+  );
 
   return (
     <section
       id="services"
       ref={sectionRef}
-      className="py-24 md:py-40 bg-dark relative z-10"
+      className="bg-dark relative z-10"
+      style={{ height: `${services.length * 90}vh` }} // Taller container to account for the buffers
     >
-      <div className="max-w-[1400px] mx-auto px-6 md:px-12">
-        {/* Header */}
-        <ScrollReveal className="text-center mb-16 md:mb-24">
-          <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-yellow mb-4 block">
-            How I Help
-          </span>
-          <h2 className="font-serif-display text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-white tracking-tight leading-none mb-6">
-            My Services
-          </h2>
-        </ScrollReveal>
+      <div className="sticky top-0 h-screen w-full flex flex-col items-center overflow-hidden">
+        
+        {/* Header - Positioned naturally in the flex flow so it never overlaps the cards */}
+        <div className="w-full flex-shrink-0 pt-20 md:pt-32 pb-4 z-50 pointer-events-none">
+          <ScrollReveal className="text-center">
+            <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-yellow mb-2 md:mb-4 block">
+              How I Help
+            </span>
+            <h2 className="font-serif-display text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-white tracking-tight leading-none">
+              My Services
+            </h2>
+          </ScrollReveal>
+        </div>
 
-        {/* 
-          Stacking Container 
-          Normal gap (40px). Removed huge bottom padding so it transitions cleanly to the next page.
-        */}
-        <div className="flex flex-col gap-10 pb-10 relative">
+        {/* Card Stack - Takes remaining space below header */}
+        <div className="relative flex-1 w-full flex items-center justify-center">
           {services.map((service, index) => (
-            <ServiceCard
+            <ScrollLinkedCard
               key={service.title}
               service={service}
               index={index}
-              totalCards={services.length}
-              progress={scrollYProgress}
+              currentIndex={currentIndex}
             />
           ))}
         </div>

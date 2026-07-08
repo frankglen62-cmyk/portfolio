@@ -1,8 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useTypewriter } from '../hooks/useTypewriter';
+import { useVisualEditor } from '../contexts/VisualEditorContext';
+import { EditableElement } from '../components/editor/EditableElement';
+import { WordPullUp } from '../components/animations/WordPullUp';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -10,343 +12,345 @@ interface HeroProps {
   isLoaded: boolean;
 }
 
-const icons = {
-  search: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="currentColor">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-  ),
-  list: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="currentColor">
-      <circle cx="4" cy="6" r="1.5" fill="currentColor" />
-      <circle cx="4" cy="12" r="1.5" fill="currentColor" />
-      <circle cx="4" cy="18" r="1.5" fill="currentColor" />
-      <line x1="9" y1="6" x2="20" y2="6" />
-      <line x1="9" y1="12" x2="20" y2="12" />
-      <line x1="9" y1="18" x2="20" y2="18" />
-    </svg>
-  ),
-  store: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="currentColor">
-      <path d="M3 9h18v2H3z"></path>
-      <path d="M3 9l2-5h14l2 5"></path>
-      <path d="M4 11v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9"></path>
-      <path d="M10 22v-5h4v5"></path>
-    </svg>
-  ),
-  star: (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="currentColor">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-    </svg>
-  )
-};
-
-import { AmazonLogo, ShopifyLogo, EbayLogo, WalmartLogo, EtsyLogo } from '../components/LogoComponents';
-
 export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
-  const sectionRef = useRef<HTMLElement>(null);
-
-  const typedRole = useTypewriter([
-    "E-commerce Virtual Assistant",
-    "eBay Dropshipping/Lister",
-    "Cross Posting",
-    "Poshmark Lister",
-    "Product Researcher",
-    "Shopify Product Lister/Researcher",
-    "Amazon Lister/Product Researcher",
-    "Product Listing Optimization"
-  ]);
-
+  const sceneRef = useRef<HTMLElement>(null);
+  const portraitRef = useRef<HTMLDivElement>(null);
+  const portraitPoseRef = useRef<HTMLDivElement>(null);
+  const aboutRef = useRef<HTMLDivElement>(null);
   const ease = [0.16, 1, 0.3, 1] as const;
+  const { layout, configLoaded, editMode, isDragging, setSelectedElement } = useVisualEditor();
 
-  const container = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
-  };
-  const fadeUp = {
-    hidden: { opacity: 0, y: 40 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease } },
-  };
+  useLayoutEffect(() => {
+    if (!configLoaded || !sceneRef.current || !portraitRef.current || !portraitPoseRef.current || !aboutRef.current) return;
 
-  // Marquee brand elements rendered as styled text + icons
-  const marqueeLogoBrands = [
-    { type: 'brand', key: 'amazon', element: <AmazonLogo monochrome={true} className="h-6 w-auto object-contain text-dark" /> },
-    { type: 'dot', key: 'd1' },
-    { type: 'brand', key: 'shopify', element: <ShopifyLogo monochrome={true} className="h-7 w-auto object-contain text-dark" /> },
-    { type: 'dot', key: 'd2' },
-    { type: 'brand', key: 'ebay', element: <EbayLogo monochrome={true} className="h-8 w-auto object-contain text-dark" /> },
-    { type: 'dot', key: 'd3' },
-    { type: 'brand', key: 'walmart', element: <WalmartLogo monochrome={true} className="h-6 w-auto object-contain text-dark" /> },
-    { type: 'dot', key: 'd4' },
-    { type: 'brand', key: 'etsy', element: <EtsyLogo monochrome={true} className="h-6 w-auto object-contain text-dark" /> },
-    { type: 'dot', key: 'd5' },
-    { type: 'text', key: 'pr', label: 'Product Research', icon: icons.search },
-    { type: 'dot', key: 'd6' },
-    { type: 'text', key: 'pl', label: 'Product Listing', icon: icons.list },
-    { type: 'dot', key: 'd7' },
-    { type: 'text', key: 'sm', label: 'Store Management', icon: icons.store },
-    { type: 'dot', key: 'd8' },
-  ];
+    const ctx = gsap.context(() => {
+      const heroItems = gsap.utils.toArray<HTMLElement>('.hero-scroll-out');
+      const aboutItems = gsap.utils.toArray<HTMLElement>('.about-scroll-in');
+      const nav = document.querySelector<HTMLElement>('[data-hero-nav]');
+      const mm = gsap.matchMedia();
 
-  const repeatedMarquee = [...marqueeLogoBrands, ...marqueeLogoBrands, ...marqueeLogoBrands, ...marqueeLogoBrands];
+      // GSAP owns the complete portrait transform. Keeping the centering
+      // transform out of CSS prevents it from being overwritten on refresh.
+      gsap.set(portraitRef.current, { xPercent: -50 });
+      // Hero-only offset so the portrait starts at the desired hero position
+      // (X: -35, Y: 317) while the scroll animation resets to (0,0) for the
+      // About section, preserving that section's placement at (85, 336).
+      gsap.set(portraitPoseRef.current, { x: -120, y: -19 });
+      gsap.set(aboutRef.current, { autoAlpha: 1 });
+      gsap.set(aboutItems, { autoAlpha: 0, y: 30 });
+
+      mm.add(
+        {
+          desktop: '(min-width: 810px)',
+          mobile: '(max-width: 809px)',
+          reduceMotion: '(prefers-reduced-motion: reduce)',
+        },
+        (context) => {
+          const { desktop, reduceMotion } = context.conditions as {
+            desktop: boolean;
+            mobile: boolean;
+            reduceMotion: boolean;
+          };
+
+          const timeline = gsap.timeline({
+            defaults: { ease: 'power2.out' },
+            scrollTrigger: {
+              trigger: sceneRef.current,
+              start: 'top top',
+              end: 'bottom bottom',
+              scrub: reduceMotion ? true : 0.9,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          timeline
+            .to(heroItems, { autoAlpha: 0, y: -20, duration: 0.25, stagger: 0.015 }, 0)
+            .to(nav, { autoAlpha: 0, duration: 0.22 }, 0)
+            .to(
+              portraitRef.current,
+              {
+                // Account for characterImage editor offset (x: 117px) so the
+                // portrait left edge sits flush with the viewport edge.
+                x: desktop ? '-27vw' : '-20vw',
+                y: desktop ? -60 : -18,
+                scale: desktop ? 1 : 0.78,
+                duration: 0.72,
+                ease: 'power2.inOut',
+              },
+              0.08,
+            )
+            .to(
+              portraitPoseRef.current,
+              {
+                // Kept as a separate scroll layer so the saved Hero editor
+                // position is never mutated by the About transition.
+                x: 0,
+                y: 0,
+                scale: 1,
+                duration: 0.72,
+                ease: 'power2.inOut',
+              },
+              0.08,
+            )
+            .to(
+              aboutItems,
+              {
+                autoAlpha: 1,
+                y: 0,
+                duration: 0.28,
+                stagger: 0.075,
+                ease: 'power2.out',
+              },
+              0.34,
+            );
+
+          return () => timeline.kill();
+        },
+      );
+
+      return () => mm.revert();
+    }, sceneRef);
+
+    return () => ctx.revert();
+  }, [configLoaded]);
 
   return (
     <section
       id="home"
-      ref={sectionRef}
-      className="relative min-h-screen bg-[#f6df6b] overflow-hidden flex flex-col justify-between"
+      ref={sceneRef}
+      className="sticky top-0 h-[200svh] min-h-[200svh] overflow-visible"
+      onClick={() => editMode && !isDragging && setSelectedElement(null)}
     >
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 pt-32 md:pt-40 pb-16 flex-1 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center w-full">
+      <div id="about" className="absolute top-1/2 h-px w-px" aria-hidden="true" />
 
-          {/* LEFT SIDE — Text Content */}
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate={isLoaded ? 'visible' : 'hidden'}
-            className="flex flex-col items-start text-left z-20 relative"
-          >
-            {/* The White Burst Background (Intro Animation Only) */}
-            <div className="absolute top-[25%] -left-[10%] md:top-[38%] md:-left-[15%] -z-10 pointer-events-none">
-              <motion.div 
-                initial={{ rotate: -180, scale: 0.5, opacity: 0 }}
-                animate={isLoaded ? { rotate: 0, scale: 1, opacity: 1 } : { rotate: -180, scale: 0.5, opacity: 0 }} 
-                transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                className="relative w-[380px] h-[380px] md:w-[520px] md:h-[520px] flex items-center justify-center"
-              >
-                {/* 
-                  Perfect smooth wavy badge using an SVG path generated by polar coordinates 
-                  r(theta) = baseRadius + amplitude * sin(points * theta)
-                */}
-                <svg viewBox="0 0 500 500" className="w-full h-full text-white fill-current">
-                  <path d={(() => {
-                    const points = 15; // Number of scallops (15 waves)
-                    const baseRadius = 220;
-                    const amplitude = 10; // Softer spike
-                    const center = 250;
-                    const resolution = 360;
-                    let path = "";
-                    for (let i = 0; i <= resolution; i++) {
-                      const theta = (i * Math.PI * 2) / resolution;
-                      const r = baseRadius + amplitude * Math.sin(points * theta);
-                      const x = center + r * Math.cos(theta);
-                      const y = center + r * Math.sin(theta);
-                      if (i === 0) path += `M ${x} ${y} `;
-                      else path += `L ${x} ${y} `;
-                    }
-                    path += "Z";
-                    return path;
-                  })()} />
-                </svg>
-              </motion.div>
-            </div>
-
-            {/* Small uppercase tagline with dot */}
-            <motion.div
-              variants={fadeUp}
-              className="flex items-center gap-2 font-ui font-bold text-[11px] tracking-[0.15em] uppercase text-dark mb-6"
-            >
-              <span className="w-2 h-2 rounded-full bg-dark block"></span>
-              AVAILABLE FOR FREELANCE PROJECTS
-            </motion.div>
-
-            {/* Main headline */}
-            <motion.h1
-              variants={fadeUp}
-              className="font-display font-bold text-[clamp(3.5rem,7vw,6.5rem)] leading-[1] tracking-tight text-dark mb-5"
-            >
-              Hi, I’m <br />Frank Glen Martin
-            </motion.h1>
-
-            <motion.h2
-              variants={fadeUp}
-              className="font-display font-semibold text-[22px] md:text-3xl text-dark mb-8 flex items-center tracking-tight h-[36px] md:h-[40px]"
-            >
-              {typedRole} <span className="ml-1 animate-pulse font-light text-dark">|</span>
-            </motion.h2>
-
-            {/* Subtext paragraph */}
-            <motion.p
-              variants={fadeUp}
-              className="font-body text-base md:text-[17px] text-dark/80 max-w-[460px] mb-10 leading-relaxed font-medium"
-            >
-              With 2 years of experience helping online sellers, I specialize in product research, product listing, store management, and marketplace support across multiple platforms.
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4 mb-8">
-              <motion.a
-                href="#portfolio"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-3 bg-dark text-white font-ui font-bold text-[13px] rounded-full px-8 py-4 shadow-lg cursor-pointer hover:bg-black transition-colors tracking-wide"
-              >
-                View My Work <span>→</span>
-              </motion.a>
-              <motion.a
-                href="#contact"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="inline-flex items-center gap-3 bg-transparent border-[1.5px] border-dark text-dark font-ui font-bold text-[13px] rounded-full px-8 py-4 cursor-pointer hover:bg-dark/5 transition-colors tracking-wide"
-              >
-                Let's Work Together <span>→</span>
-              </motion.a>
-            </motion.div>
-
-            {/* Download Resume */}
-            <motion.a
-              variants={fadeUp}
-              href="#"
-              className="inline-flex items-center gap-2 font-ui font-semibold text-[13px] text-dark hover:opacity-70 transition-opacity"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Download Resume
-            </motion.a>
-          </motion.div>
-
-          {/* RIGHT SIDE — Image and Floating Badges */}
-          <motion.div
-            initial="hidden"
-            animate={isLoaded ? 'visible' : 'hidden'}
-            variants={{
-              hidden: { opacity: 0, scale: 0.95 },
-              visible: { opacity: 1, scale: 1, transition: { duration: 1, ease, delay: 0.35 } }
-            }}
-            className="relative flex items-center justify-center lg:justify-end mt-12 lg:mt-0 w-full"
-          >
-            {/* Container for the image and attached badges */}
-            <div className="relative w-full max-w-[380px] mx-auto lg:mr-16 z-10">
-              
-              {/* The photo container */}
-              <div className="relative w-full aspect-[3/4.5] rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.08)] flex flex-col items-center justify-center overflow-hidden">
-                <img 
-                  src="/frank-profile.jpg" 
-                  alt="Frank Glen Martin" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* FLOATING BADGES (Attached to the container via absolute positioning) */}
-              
-              {/* Amazon */}
-              <motion.div 
-                animate={{ y: [-4, 4, -4] }} transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[12%] -left-12 md:-left-16 bg-white px-5 py-3 rounded-[1rem] shadow-xl border border-dark/5 z-20 flex items-center"
-              >
-                <AmazonLogo monochrome={false} className="h-5 md:h-6 w-auto object-contain" />
-              </motion.div>
-              
-              {/* Shopify */}
-              <motion.div 
-                animate={{ y: [4, -4, 4] }} transition={{ duration: 5.1, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[42%] -left-16 md:-left-20 bg-white px-5 py-3 rounded-[1rem] shadow-xl border border-dark/5 z-20 flex items-center"
-              >
-                <ShopifyLogo monochrome={false} className="h-6 md:h-7 w-auto object-contain" />
-              </motion.div>
-
-              {/* eBay */}
-              <motion.div 
-                animate={{ y: [-5, 5, -5] }} transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[72%] -left-10 md:-left-14 bg-white px-5 py-3 rounded-[1rem] shadow-xl border border-dark/5 z-20 flex items-center"
-              >
-                <EbayLogo monochrome={false} className="h-6 md:h-8 w-auto object-contain" />
-              </motion.div>
-
-              {/* Product Research */}
-              <motion.div 
-                animate={{ y: [5, -5, 5] }} transition={{ duration: 5.4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[8%] -right-16 md:-right-24 bg-white p-2 pr-6 rounded-full shadow-xl border border-dark/5 z-20 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#f6df6b] flex items-center justify-center text-dark">
-                  {icons.search}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Product</span>
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Research</span>
-                </div>
-              </motion.div>
-
-              {/* Product Listing */}
-              <motion.div 
-                animate={{ y: [-4, 4, -4] }} transition={{ duration: 4.3, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[32%] -right-14 md:-right-20 bg-white p-2 pr-6 rounded-full shadow-xl border border-dark/5 z-20 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#f6df6b] flex items-center justify-center text-dark">
-                  {icons.list}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Product</span>
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Listing</span>
-                </div>
-              </motion.div>
-
-              {/* Store Management */}
-              <motion.div 
-                animate={{ y: [4, -4, 4] }} transition={{ duration: 4.9, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[56%] -right-20 md:-right-28 bg-white p-2 pr-6 rounded-full shadow-xl border border-dark/5 z-20 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#f6df6b] flex items-center justify-center text-dark">
-                  {icons.store}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Store</span>
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Management</span>
-                </div>
-              </motion.div>
-
-              {/* 2+ Years Experience */}
-              <motion.div 
-                animate={{ y: [-5, 5, -5] }} transition={{ duration: 5.3, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-[80%] -right-16 md:-right-24 bg-white p-2 pr-6 rounded-full shadow-xl border border-dark/5 z-20 flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-full bg-[#f6df6b] flex items-center justify-center text-dark">
-                  {icons.star}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">2+ Years</span>
-                  <span className="font-ui font-semibold text-dark text-[11px] leading-tight">Experience</span>
-                </div>
-              </motion.div>
-
-            </div>
-          </motion.div>
-
-        </div>
-      </div>
-
-      {/* Bottom Marquee Banner */}
-      <div className="w-full relative py-5 border-y border-dark/10 overflow-hidden flex items-center bg-[#f6df6b]">
-        <motion.div
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ 
-            repeat: Infinity, 
-            ease: "linear", 
-            duration: 40 
+      <div className="sticky top-0 h-[100svh] min-h-[100svh] overflow-hidden">
+        {/* This is the original Hero background, shared by both scroll states. */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse 55% 50% at 50% 38%, rgba(220, 225, 230, 0.6) 0%, transparent 70%),
+              linear-gradient(180deg, #d8dbdf 0%, #aab0b8 20%, #878c96 40%, #969ba5 60%, #b8bdc5 80%, #f0f1f3 100%)
+            `,
           }}
-          className="flex items-center gap-8 md:gap-10 w-max"
+        />
+
+        <div
+          className="hero-scroll-out absolute top-[14%] md:top-[12%] w-full flex justify-center gap-[4vw] md:gap-[8vw] z-10 pointer-events-none select-none px-4"
         >
-          {repeatedMarquee.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-center shrink-0">
-              {item.type === 'brand' && item.element}
-              {item.type === 'text' && (
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-dark text-[#f6df6b] flex items-center justify-center">
-                    <div className="scale-75">{item.icon}</div>
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="font-ui font-bold text-dark text-[10px] uppercase tracking-widest leading-none mb-0.5">{item.label?.split(' ')[0]}</span>
-                    <span className="font-ui font-bold text-dark text-[10px] uppercase tracking-widest leading-none">{item.label?.split(' ').slice(1).join(' ')}</span>
-                  </div>
-                </div>
-              )}
-              {item.type === 'dot' && (
-                <div className="w-1.5 h-1.5 rounded-full bg-dark mx-4 md:mx-6"></div>
-              )}
+          <EditableElement id="heyTextLeft" style={{ pointerEvents: 'none' }}>
+            <WordPullUp
+              words="Hey,"
+              className="font-heading italic leading-none block"
+              style={{
+                fontSize: layout.heyTextLeft?.fontSize, fontWeight: layout.heyTextLeft?.fontWeight,
+                letterSpacing: layout.heyTextLeft?.letterSpacing, lineHeight: layout.heyTextLeft?.lineHeight,
+                opacity: layout.heyTextLeft?.opacity, color: layout.heyTextLeft?.color,
+              }}
+              wrapperFramerProps={{
+                hidden: { opacity: 0 },
+                show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } }
+              }}
+            />
+          </EditableElement>
+          <EditableElement id="heyTextRight" style={{ pointerEvents: 'none' }}>
+            <WordPullUp
+              words="there"
+              className="font-heading italic leading-none block"
+              style={{
+                fontSize: layout.heyTextRight?.fontSize, fontWeight: layout.heyTextRight?.fontWeight,
+                letterSpacing: layout.heyTextRight?.letterSpacing, lineHeight: layout.heyTextRight?.lineHeight,
+                opacity: layout.heyTextRight?.opacity, color: layout.heyTextRight?.color,
+              }}
+              wrapperFramerProps={{
+                hidden: { opacity: 0 },
+                show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.6 } }
+              }}
+            />
+          </EditableElement>
+        </div>
+
+        {/* One portrait layer is retained for the entire transition. */}
+        <div
+          ref={portraitRef}
+          className="absolute bottom-0 left-1/2 z-20 h-[80svh] md:h-[95svh] lg:h-[105svh] will-change-transform"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 30 }}
+            animate={isLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 30 }}
+            transition={{ duration: 1.2, ease, delay: 0.25 }}
+            className="h-full"
+          >
+            <div ref={portraitPoseRef} className="h-full origin-bottom will-change-transform">
+              <EditableElement id="characterImage" className="h-full">
+                <img
+                  src="/frank-profile.png"
+                  alt="Frank Glen Martin"
+                  className="object-contain origin-bottom"
+                  draggable={false}
+                  style={{
+                    width: layout.characterImage?.width,
+                    height: layout.characterImage?.height,
+                    transform: `scale(${layout.characterImage?.scale || 1})`,
+                    opacity: layout.characterImage?.opacity,
+                    pointerEvents: 'none',
+                  }}
+                />
+              </EditableElement>
             </div>
-          ))}
-        </motion.div>
+          </motion.div>
+        </div>
+
+        <div
+          className="hero-scroll-out absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] z-30 hidden md:block"
+        >
+          <EditableElement id="availableBadge">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-5 py-3 rounded-full border border-dark/5 shadow-sm origin-left"
+              style={{ transform: `scale(${layout.availableBadge?.scale || 1})`, opacity: layout.availableBadge?.opacity }}
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-orange shrink-0" />
+              <span className="font-body font-medium text-[13px] text-dark">Available for new opportunities</span>
+            </motion.div>
+          </EditableElement>
+        </div>
+
+        <div
+          className="hero-scroll-out absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] z-30 max-w-[200px] text-right hidden md:block"
+        >
+          <EditableElement id="specializationText">
+            <WordPullUp
+              words="Specialized in E-commerce, Product Listing, Store Management, and Virtual Assistance."
+              className="font-body leading-relaxed"
+              style={{
+                fontSize: layout.specializationText?.fontSize, fontWeight: layout.specializationText?.fontWeight,
+                letterSpacing: layout.specializationText?.letterSpacing, lineHeight: layout.specializationText?.lineHeight,
+                opacity: layout.specializationText?.opacity, color: layout.specializationText?.color,
+              }}
+              wrapperFramerProps={{
+                hidden: { opacity: 0 },
+                show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.9 } }
+              }}
+              framerProps={{
+                hidden: { y: 10, opacity: 0 },
+                show: { y: 0, opacity: 1 }
+              }}
+            />
+          </EditableElement>
+        </div>
+
+        <div
+          className="hero-scroll-out absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] z-30"
+        >
+          <EditableElement id="iAmFrankText">
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
+              className="font-display text-dark uppercase"
+              style={{
+                fontSize: layout.iAmFrankText?.fontSize, fontWeight: layout.iAmFrankText?.fontWeight,
+                letterSpacing: layout.iAmFrankText?.letterSpacing, lineHeight: layout.iAmFrankText?.lineHeight,
+                opacity: layout.iAmFrankText?.opacity, color: layout.iAmFrankText?.color,
+              }}
+            >
+              I Am<br />Frank
+            </motion.h1>
+          </EditableElement>
+        </div>
+
+        <div
+          className="hero-scroll-out absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] z-30 text-right"
+        >
+          <EditableElement id="roleTitleText">
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="font-display text-dark uppercase"
+              style={{
+                fontSize: layout.roleTitleText?.fontSize, fontWeight: layout.roleTitleText?.fontWeight,
+                letterSpacing: layout.roleTitleText?.letterSpacing, lineHeight: layout.roleTitleText?.lineHeight,
+                opacity: layout.roleTitleText?.opacity, color: layout.roleTitleText?.color,
+              }}
+            >
+              Ecommerce<br />Virtual<br />Assistant
+            </motion.h2>
+          </EditableElement>
+        </div>
+
+        {/* Editorial About state */}
+        <div
+          ref={aboutRef}
+          className="invisible absolute z-30 top-[11%] bottom-[7%] left-[44%] right-[5%] md:top-[14%] md:bottom-[8%] md:left-[51%] md:right-[6%] lg:left-[52%] lg:right-[8%] flex flex-col justify-center text-dark"
+        >
+          <div className="about-scroll-in font-ui text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.32em] mb-3 md:mb-5">
+            Who I am
+          </div>
+
+          <EditableElement id="aboutTitle" label="About Title">
+            <h2
+              className="about-scroll-in font-heading font-semibold tracking-[-0.045em] leading-[0.92] text-[clamp(2rem,6.2vw,5.6rem)] mb-5 md:mb-8"
+              style={{ color: '#1e1e1e' }}
+            >
+              Ecommerce VA<br />for ambitious sellers
+            </h2>
+          </EditableElement>
+
+          <div className="about-scroll-in border-y border-dark/20 py-3 md:py-5 mb-4 md:mb-6 grid grid-cols-3">
+            <div className="pr-2 md:pr-5 border-r border-dark/15">
+              <strong className="font-heading text-xl md:text-4xl leading-none block">2+</strong>
+              <span className="font-ui text-[7px] md:text-[9px] uppercase tracking-[0.13em] leading-tight mt-1.5 block">Years experience</span>
+            </div>
+            <div className="px-2 md:px-5 border-r border-dark/15">
+              <strong className="font-heading text-xl md:text-4xl leading-none block">5</strong>
+              <span className="font-ui text-[7px] md:text-[9px] uppercase tracking-[0.13em] leading-tight mt-1.5 block">Store platforms</span>
+            </div>
+            <div className="pl-2 md:pl-5">
+              <strong className="font-heading text-xl md:text-4xl leading-none block">100+</strong>
+              <span className="font-ui text-[7px] md:text-[9px] uppercase tracking-[0.13em] leading-tight mt-1.5 block">Listings optimized</span>
+            </div>
+          </div>
+
+          <p className="about-scroll-in font-body text-[12px] sm:text-[13px] md:text-[16px] font-medium leading-[1.65] md:leading-[1.7] max-w-[640px] mb-4 md:mb-7 text-[#24272b]">
+            I’m <strong className="font-bold text-[#111315]">Frank Glen Martin</strong>, a detail-oriented Ecommerce Virtual Assistant helping Shopify, eBay, and Amazon sellers keep their stores accurate, organized, and ready to convert. I support product listings, SEO content, inventory updates, competitor research, and the everyday work that keeps ecommerce moving.
+          </p>
+
+          <div className="about-scroll-in flex flex-col sm:flex-row sm:items-center gap-3 md:gap-5">
+            <motion.a
+              href="#contact"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex w-fit items-center gap-5 bg-dark text-white font-body font-semibold text-[10px] md:text-xs rounded-full px-5 md:px-7 py-3 md:py-3.5"
+            >
+              Let’s Connect <span aria-hidden="true">→</span>
+            </motion.a>
+            <span className="hidden sm:block font-ui text-[8px] md:text-[10px] font-medium tracking-wide text-[#34383d]">
+              E-commerce · Shopify support
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="absolute inset-x-0 bottom-0 h-[22svh] z-[25] pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, rgba(240,241,243,0) 0%, rgba(240,241,243,0.18) 58%, rgba(240,241,243,0.68) 100%)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[12svh] z-[26] pointer-events-none"
+          style={{
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            opacity: 0.45,
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
+          }}
+        />
       </div>
     </section>
   );

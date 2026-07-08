@@ -14,7 +14,7 @@ export const Certifications: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="certifications" ref={sectionRef} className="py-24 md:py-36 bg-cream relative overflow-hidden">
+    <section id="certifications" ref={sectionRef} className="py-12 md:py-20 overflow-hidden" style={{ background: 'linear-gradient(180deg, #d8dbdf 0%, #e2e4e8 50%, #ecedef 100%)' }}>
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12">
         {/* Section Header */}
         <ScrollReveal className="text-center mb-16 md:mb-24">

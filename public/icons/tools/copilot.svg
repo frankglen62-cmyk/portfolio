@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="cg1" x1="0" y1="48" x2="48" y2="0">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="20%" stop-color="#EC4899"/>
+      <stop offset="45%" stop-color="#8B5CF6"/>
+      <stop offset="70%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 32Q12 39 19 39Q26 39 26 32L26 16Q26 9 33 9" stroke="url(#cg1)" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+  <path d="M36 16Q36 9 29 9Q22 9 22 16L22 32Q22 39 15 39" stroke="url(#cg1)" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+</svg>

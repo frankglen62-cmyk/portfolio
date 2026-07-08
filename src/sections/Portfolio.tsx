@@ -1,103 +1,73 @@
-import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef } from 'react';
 import { ScrollReveal } from '../components/animations/ScrollReveal';
+import { BlurFade } from '../components/animations/BlurFade';
+import { VideoText } from '../components/ui/video-text';
 
-const portfolioCategories = ['All', 'Social Media', 'Business Cards', 'Websites', 'Email Marketing'];
-
-const portfolioItems = [
-  { id: 1, title: 'Social Media Post Design', category: 'Social Media', desc: 'Branded social media content for Instagram and Facebook' },
-  { id: 2, title: 'Business Card Design', category: 'Business Cards', desc: 'Professional business and thank you card designs' },
-  { id: 3, title: 'E-Commerce Website', category: 'Websites', desc: 'Shopify store setup and management' },
-  { id: 4, title: 'Instagram Stories', category: 'Social Media', desc: 'Engaging story templates for client brands' },
-  { id: 5, title: 'Email Newsletter', category: 'Email Marketing', desc: 'MailChimp email campaign designs' },
-  { id: 6, title: 'Thank You Cards', category: 'Business Cards', desc: 'Custom thank you card designs for small businesses' },
-  { id: 7, title: 'Facebook Ads', category: 'Social Media', desc: 'High-converting Facebook ad creatives' },
-  { id: 8, title: 'Landing Page', category: 'Websites', desc: 'WordPress landing page design and development' },
-  { id: 9, title: 'TikTok Content', category: 'Social Media', desc: 'Short-form video content and thumbnails' },
-];
-
-const gradients = [
-  'from-yellow/30 to-orange/20',
-  'from-cream-dark/50 to-cream/80',
-  'from-yellow-soft/60 to-white',
-  'from-cream/60 to-yellow/20',
-  'from-orange/15 to-cream-dark/40',
-  'from-yellow-pale/60 to-cream/80',
-  'from-cream-dark/40 to-yellow/15',
-  'from-yellow-soft/40 to-cream/60',
-  'from-cream/50 to-orange/10',
+const portfolioSlides = [
+  {
+    title: "Social Media Post Design",
+    button: "Explore Design",
+    src: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "E-Commerce Shopify Setup",
+    button: "Explore Project",
+    src: "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Business Card Design",
+    button: "Explore Identity",
+    src: "https://images.unsplash.com/photo-1590041794748-2d8eb73a571c?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Email Newsletter Templates",
+    button: "Explore Campaign",
+    src: "https://images.unsplash.com/photo-1557200134-90327ee9fafa?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "WordPress Landing Page",
+    button: "Explore Site",
+    src: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "TikTok Content Creative",
+    button: "Explore Content",
+    src: "https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1200&auto=format&fit=crop",
+  }
 ];
 
 export const Portfolio: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
-  const [active, setActive] = useState('All');
-
-  const filtered = active === 'All' ? portfolioItems : portfolioItems.filter(i => i.category === active);
 
   return (
-    <section id="portfolio" ref={sectionRef} className="py-28 md:py-40 bg-cream relative overflow-hidden">
+    <section id="portfolio" ref={sectionRef} className="py-28 md:py-40 relative overflow-hidden" style={{ background: '#000000' }}>
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
-        <ScrollReveal className="text-center mb-12">
-          <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-dark/50 mb-4 block">
-            My Work
-          </span>
-          <h2 className="font-serif-display text-[clamp(2.2rem,4.5vw,3.8rem)] font-bold text-dark tracking-wide uppercase">
-            Portfolio
-          </h2>
-          <div className="w-12 h-[2px] bg-dark/20 mt-5 mx-auto" />
+        <ScrollReveal className="w-full mb-16 md:mb-24 px-2 md:px-0">
+          <div className="w-full h-[180px] md:h-[250px] relative overflow-hidden">
+            <VideoText src="https://cdn.magicui.design/ocean-small.webm">
+              My Project
+            </VideoText>
+          </div>
         </ScrollReveal>
 
-        {/* Filter Tabs */}
-        <ScrollReveal delay={0.1} className="flex flex-wrap justify-center gap-2.5 mb-14">
-          {portfolioCategories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActive(cat)}
-              className={`font-ui text-[11px] font-semibold uppercase tracking-wider px-5 py-2.5 rounded-full border transition-all duration-300 ${
-                active === cat
-                  ? 'bg-dark text-white border-dark'
-                  : 'bg-transparent text-dark/60 border-dark/10 hover:border-dark/30 hover:text-dark'
-              }`}
-            >
-              {cat}
-            </button>
+        {/* Masonry Grid Component */}
+        <div className="w-full columns-1 gap-4 sm:columns-2 lg:columns-3 mt-12">
+          {portfolioSlides.map((slide, idx) => (
+            <BlurFade key={idx} delay={0.25 + idx * 0.05} inView>
+              <div className="mb-4 relative group overflow-hidden rounded-2xl bg-white shadow-md cursor-pointer inline-block w-full break-inside-avoid">
+                <img
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                  src={slide.src}
+                  alt={slide.title}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                  <h3 className="text-white font-bold text-xl mb-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300">{slide.title}</h3>
+                  <span className="text-yellow text-sm font-semibold uppercase tracking-wider translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75">{slide.button}</span>
+                </div>
+              </div>
+            </BlurFade>
           ))}
-        </ScrollReveal>
-
-        {/* Grid (Staggered ScrollReveal) */}
-        <ScrollReveal staggerChildren={0.05} amount={0.08}>
-          <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AnimatePresence mode="popLayout">
-              {filtered.map((item, i) => (
-                <motion.div
-                  key={item.id}
-                  layout
-                  variants={{
-                    hidden: { opacity: 0, scale: 0.92, y: 25 },
-                    visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4 } },
-                  }}
-                  whileHover={{ y: -6 }}
-                  className="group cursor-pointer"
-                >
-                  <div className={`aspect-[4/3] rounded-2xl bg-gradient-to-br ${gradients[i % gradients.length]} border border-dark/5 overflow-hidden relative shadow-sm group-hover:shadow-lg transition-all duration-300`}>
-                    <div className="absolute inset-0 flex items-center justify-center p-6">
-                      <div className="text-center">
-                        <div className="w-14 h-14 rounded-xl bg-white/80 border border-dark/5 backdrop-blur-sm mx-auto mb-3 flex items-center justify-center text-2xl shadow-sm group-hover:scale-105 transition-transform duration-300">
-                          {item.category === 'Social Media' ? '📱' : item.category === 'Business Cards' ? '💼' : item.category === 'Websites' ? '🌐' : '📧'}
-                        </div>
-                        <p className="font-ui text-[10px] font-semibold uppercase tracking-wider text-dark/50">{item.category}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 px-1">
-                    <h3 className="font-display font-bold text-[15px] text-dark transition-colors group-hover:text-dark/80">{item.title}</h3>
-                    <p className="text-sm text-dark/60 mt-1 font-body">{item.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   );
