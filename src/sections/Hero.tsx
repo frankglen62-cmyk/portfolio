@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -17,8 +17,23 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
   const portraitRef = useRef<HTMLDivElement>(null);
   const portraitPoseRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
+  const [isMobileViewport, setIsMobileViewport] = React.useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  ));
   const ease = [0.16, 1, 0.3, 1] as const;
   const { layout, configLoaded, editMode, isDragging, setSelectedElement } = useVisualEditor();
+  const getLayout = useCallback((id: string) => {
+    const mobileId = `${id}Mobile`;
+    return isMobileViewport && layout[mobileId] ? layout[mobileId] : layout[id];
+  }, [isMobileViewport, layout]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 809px)');
+    const sync = (event: MediaQueryListEvent) => setIsMobileViewport(event.matches);
+
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
 
   useLayoutEffect(() => {
     if (!configLoaded || !sceneRef.current || !portraitRef.current || !portraitPoseRef.current || !aboutRef.current) return;
@@ -32,10 +47,6 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
       // GSAP owns the complete portrait transform. Keeping the centering
       // transform out of CSS prevents it from being overwritten on refresh.
       gsap.set(portraitRef.current, { xPercent: -50 });
-      // Hero-only offset so the portrait starts at the desired hero position
-      // (X: -35, Y: 317) while the scroll animation resets to (0,0) for the
-      // About section, preserving that section's placement at (85, 336).
-      gsap.set(portraitPoseRef.current, { x: -120, y: -19 });
       gsap.set(aboutRef.current, { autoAlpha: 1 });
       gsap.set(aboutItems, { autoAlpha: 0, y: 30 });
 
@@ -51,6 +62,11 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
             mobile: boolean;
             reduceMotion: boolean;
           };
+
+          gsap.set(
+            portraitPoseRef.current,
+            desktop ? { x: -120, y: -19, scale: 1 } : { x: 0, y: 0, scale: 1 },
+          );
 
           const timeline = gsap.timeline({
             defaults: { ease: 'power2.out' },
@@ -71,9 +87,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               {
                 // Account for characterImage editor offset (x: 117px) so the
                 // portrait left edge sits flush with the viewport edge.
-                x: desktop ? '-27vw' : '-20vw',
-                y: desktop ? -60 : -18,
-                scale: desktop ? 1 : 0.78,
+                x: desktop ? '-27vw' : 0,
+                y: desktop ? -60 : -42,
+                scale: desktop ? 1 : 0.72,
+                autoAlpha: desktop ? 1 : 0,
                 duration: 0.72,
                 ease: 'power2.inOut',
               },
@@ -136,16 +153,16 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         />
 
         <div
-          className="hero-scroll-out absolute top-[14%] md:top-[12%] w-full flex justify-center gap-[4vw] md:gap-[8vw] z-10 pointer-events-none select-none px-4"
+          className={`hero-scroll-out absolute top-[14%] md:top-[12%] w-full flex justify-center gap-[4vw] md:gap-[8vw] ${editMode ? 'z-[80]' : 'z-10'} pointer-events-none select-none px-4`}
         >
           <EditableElement id="heyTextLeft" style={{ pointerEvents: 'none' }}>
             <WordPullUp
               words="Hey,"
               className="font-heading italic leading-none block"
               style={{
-                fontSize: layout.heyTextLeft?.fontSize, fontWeight: layout.heyTextLeft?.fontWeight,
-                letterSpacing: layout.heyTextLeft?.letterSpacing, lineHeight: layout.heyTextLeft?.lineHeight,
-                opacity: layout.heyTextLeft?.opacity, color: layout.heyTextLeft?.color,
+                fontSize: getLayout('heyTextLeft')?.fontSize, fontWeight: getLayout('heyTextLeft')?.fontWeight,
+                letterSpacing: getLayout('heyTextLeft')?.letterSpacing, lineHeight: getLayout('heyTextLeft')?.lineHeight,
+                opacity: getLayout('heyTextLeft')?.opacity, color: getLayout('heyTextLeft')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -158,9 +175,9 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               words="there"
               className="font-heading italic leading-none block"
               style={{
-                fontSize: layout.heyTextRight?.fontSize, fontWeight: layout.heyTextRight?.fontWeight,
-                letterSpacing: layout.heyTextRight?.letterSpacing, lineHeight: layout.heyTextRight?.lineHeight,
-                opacity: layout.heyTextRight?.opacity, color: layout.heyTextRight?.color,
+                fontSize: getLayout('heyTextRight')?.fontSize, fontWeight: getLayout('heyTextRight')?.fontWeight,
+                letterSpacing: getLayout('heyTextRight')?.letterSpacing, lineHeight: getLayout('heyTextRight')?.lineHeight,
+                opacity: getLayout('heyTextRight')?.opacity, color: getLayout('heyTextRight')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -173,7 +190,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         {/* One portrait layer is retained for the entire transition. */}
         <div
           ref={portraitRef}
-          className="absolute bottom-0 left-1/2 z-20 h-[80svh] md:h-[95svh] lg:h-[105svh] will-change-transform"
+          className={`hero-portrait absolute bottom-0 left-1/2 ${editMode ? 'z-[70]' : 'z-20'} h-[74svh] sm:h-[80svh] md:h-[95svh] lg:h-[105svh] will-change-transform`}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 30 }}
@@ -186,13 +203,13 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
                 <img
                   src="/frank-profile.png"
                   alt="Frank Glen Martin"
-                  className="object-contain origin-bottom"
+                  className="hero-portrait-img object-contain origin-bottom"
                   draggable={false}
                   style={{
-                    width: layout.characterImage?.width,
-                    height: layout.characterImage?.height,
-                    transform: `scale(${layout.characterImage?.scale || 1})`,
-                    opacity: layout.characterImage?.opacity,
+                    width: getLayout('characterImage')?.width,
+                    height: getLayout('characterImage')?.height,
+                    transform: `scale(${getLayout('characterImage')?.scale || 1})`,
+                    opacity: getLayout('characterImage')?.opacity,
                     pointerEvents: 'none',
                   }}
                 />
@@ -202,7 +219,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className="hero-scroll-out absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] z-30 hidden md:block"
+          className={`hero-scroll-out hero-badge-wrap absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] ${editMode ? 'z-[80]' : 'z-30'} hidden md:block`}
         >
           <EditableElement id="availableBadge">
             <motion.div
@@ -211,7 +228,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-5 py-3 rounded-full border border-dark/5 shadow-sm origin-left"
-              style={{ transform: `scale(${layout.availableBadge?.scale || 1})`, opacity: layout.availableBadge?.opacity }}
+              style={{ transform: `scale(${getLayout('availableBadge')?.scale || 1})`, opacity: getLayout('availableBadge')?.opacity }}
             >
               <span className="w-2.5 h-2.5 rounded-full bg-orange shrink-0" />
               <span className="font-body font-medium text-[13px] text-dark">Available for new opportunities</span>
@@ -220,16 +237,16 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className="hero-scroll-out absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] z-30 max-w-[200px] text-right hidden md:block"
+          className={`hero-scroll-out hero-specialization-wrap absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] ${editMode ? 'z-[80]' : 'z-30'} max-w-[200px] text-right hidden md:block`}
         >
           <EditableElement id="specializationText">
             <WordPullUp
               words="Specialized in E-commerce, Product Listing, Store Management, and Virtual Assistance."
               className="font-body leading-relaxed"
               style={{
-                fontSize: layout.specializationText?.fontSize, fontWeight: layout.specializationText?.fontWeight,
-                letterSpacing: layout.specializationText?.letterSpacing, lineHeight: layout.specializationText?.lineHeight,
-                opacity: layout.specializationText?.opacity, color: layout.specializationText?.color,
+                fontSize: getLayout('specializationText')?.fontSize, fontWeight: getLayout('specializationText')?.fontWeight,
+                letterSpacing: getLayout('specializationText')?.letterSpacing, lineHeight: getLayout('specializationText')?.lineHeight,
+                opacity: getLayout('specializationText')?.opacity, color: getLayout('specializationText')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -244,7 +261,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className="hero-scroll-out absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] z-30"
+          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] ${editMode ? 'z-[80]' : 'z-30'}`}
         >
           <EditableElement id="iAmFrankText">
             <motion.h1
@@ -254,9 +271,9 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               transition={{ duration: 0.8, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
               className="font-display text-dark uppercase"
               style={{
-                fontSize: layout.iAmFrankText?.fontSize, fontWeight: layout.iAmFrankText?.fontWeight,
-                letterSpacing: layout.iAmFrankText?.letterSpacing, lineHeight: layout.iAmFrankText?.lineHeight,
-                opacity: layout.iAmFrankText?.opacity, color: layout.iAmFrankText?.color,
+                fontSize: getLayout('iAmFrankText')?.fontSize, fontWeight: getLayout('iAmFrankText')?.fontWeight,
+                letterSpacing: getLayout('iAmFrankText')?.letterSpacing, lineHeight: getLayout('iAmFrankText')?.lineHeight,
+                opacity: getLayout('iAmFrankText')?.opacity, color: getLayout('iAmFrankText')?.color,
               }}
             >
               I Am<br />Frank
@@ -265,7 +282,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className="hero-scroll-out absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] z-30 text-right"
+          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] ${editMode ? 'z-[80]' : 'z-30'} text-right`}
         >
           <EditableElement id="roleTitleText">
             <motion.h2
@@ -275,9 +292,9 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               transition={{ duration: 0.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className="font-display text-dark uppercase"
               style={{
-                fontSize: layout.roleTitleText?.fontSize, fontWeight: layout.roleTitleText?.fontWeight,
-                letterSpacing: layout.roleTitleText?.letterSpacing, lineHeight: layout.roleTitleText?.lineHeight,
-                opacity: layout.roleTitleText?.opacity, color: layout.roleTitleText?.color,
+                fontSize: getLayout('roleTitleText')?.fontSize, fontWeight: getLayout('roleTitleText')?.fontWeight,
+                letterSpacing: getLayout('roleTitleText')?.letterSpacing, lineHeight: getLayout('roleTitleText')?.lineHeight,
+                opacity: getLayout('roleTitleText')?.opacity, color: getLayout('roleTitleText')?.color,
               }}
             >
               Ecommerce<br />Virtual<br />Assistant
@@ -288,7 +305,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         {/* Editorial About state */}
         <div
           ref={aboutRef}
-          className="invisible absolute z-30 top-[11%] bottom-[7%] left-[44%] right-[5%] md:top-[14%] md:bottom-[8%] md:left-[51%] md:right-[6%] lg:left-[52%] lg:right-[8%] flex flex-col justify-center text-dark"
+          className="hero-about-panel invisible absolute z-30 top-[10%] bottom-[7%] left-[6%] right-[6%] md:top-[14%] md:bottom-[8%] md:left-[51%] md:right-[6%] lg:left-[52%] lg:right-[8%] flex flex-col justify-start md:justify-center text-dark"
         >
           <div className="about-scroll-in font-ui text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.32em] mb-3 md:mb-5">
             Who I am
@@ -297,7 +314,14 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           <EditableElement id="aboutTitle" label="About Title">
             <h2
               className="about-scroll-in font-heading font-semibold tracking-[-0.045em] leading-[0.92] text-[clamp(2rem,6.2vw,5.6rem)] mb-5 md:mb-8"
-              style={{ color: '#1e1e1e' }}
+              style={{
+                fontSize: getLayout('aboutTitle')?.fontSize,
+                fontWeight: getLayout('aboutTitle')?.fontWeight,
+                letterSpacing: getLayout('aboutTitle')?.letterSpacing,
+                lineHeight: getLayout('aboutTitle')?.lineHeight,
+                opacity: getLayout('aboutTitle')?.opacity,
+                color: '#1e1e1e',
+              }}
             >
               Ecommerce VA<br />for ambitious sellers
             </h2>
@@ -319,7 +343,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           </div>
 
           <p className="about-scroll-in font-body text-[12px] sm:text-[13px] md:text-[16px] font-medium leading-[1.65] md:leading-[1.7] max-w-[640px] mb-4 md:mb-7 text-[#24272b]">
-            I’m <strong className="font-bold text-[#111315]">Frank Glen Martin</strong>, a detail-oriented Ecommerce Virtual Assistant helping Shopify, eBay, and Amazon sellers keep their stores accurate, organized, and ready to convert. I support product listings, SEO content, inventory updates, competitor research, and the everyday work that keeps ecommerce moving.
+            I'm <strong className="font-bold text-[#111315]">Frank Glen Martin</strong>, a detail-oriented Ecommerce Virtual Assistant helping Shopify, eBay, and Amazon sellers keep their stores accurate, organized, and ready to convert. I support product listings, SEO content, inventory updates, competitor research, and the everyday work that keeps ecommerce moving.
           </p>
 
           <div className="about-scroll-in flex flex-col sm:flex-row sm:items-center gap-3 md:gap-5">
@@ -329,10 +353,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               whileTap={{ scale: 0.97 }}
               className="inline-flex w-fit items-center gap-5 bg-dark text-white font-body font-semibold text-[10px] md:text-xs rounded-full px-5 md:px-7 py-3 md:py-3.5"
             >
-              Let’s Connect <span aria-hidden="true">→</span>
+              Let's Connect <span aria-hidden="true">-&gt;</span>
             </motion.a>
-            <span className="hidden sm:block font-ui text-[8px] md:text-[10px] font-medium tracking-wide text-[#34383d]">
-              E-commerce · Shopify support
+            <span className="block font-ui text-[8px] md:text-[10px] font-medium tracking-wide text-[#34383d]">
+              E-commerce - Shopify support
             </span>
           </div>
         </div>

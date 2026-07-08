@@ -105,6 +105,105 @@
   section#contact          { z-index: 13; }
   section#footer           { z-index: 14; position: relative; border-radius: 0; box-shadow: none; }
 
+  @media (max-width: 809px) {
+    section#home .hero-scroll-out:first-of-type {
+      top: clamp(118px, 17svh, 150px) !important;
+      gap: clamp(14px, 6vw, 30px) !important;
+      padding-inline: 14px !important;
+    }
+
+    .hero-portrait {
+      height: clamp(680px, 90svh, 760px) !important;
+      bottom: -26px !important;
+    }
+
+    .hero-badge-wrap {
+      display: block !important;
+      left: 5.5% !important;
+      top: auto !important;
+      bottom: 29svh !important;
+      max-width: 178px !important;
+    }
+
+    .hero-badge-wrap [data-editable-id="availableBadge"] > div {
+      gap: 8px !important;
+      padding: 9px 12px !important;
+    }
+
+    .hero-badge-wrap span:last-child {
+      font-size: 9.4px !important;
+      white-space: nowrap;
+    }
+
+    .hero-specialization-wrap {
+      display: block !important;
+      right: 5% !important;
+      top: auto !important;
+      bottom: 29svh !important;
+      width: 124px !important;
+      max-width: 124px !important;
+    }
+
+    .hero-specialization-wrap [data-editable-id="specializationText"] {
+      display: block;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.32);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+
+    .hero-about-panel {
+      top: 13% !important;
+      left: 7% !important;
+      right: 7% !important;
+      bottom: 13% !important;
+      justify-content: center !important;
+      max-width: none;
+      z-index: 31 !important;
+    }
+
+    .hero-about-panel .about-scroll-in:first-child {
+      margin-bottom: 8px !important;
+      font-size: 8px !important;
+      letter-spacing: 0.28em !important;
+    }
+
+    .hero-about-panel [data-editable-id="aboutTitle"] h2 {
+      margin-bottom: 16px !important;
+    }
+
+    .hero-about-panel .about-scroll-in:nth-child(3) {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      padding-block: 12px !important;
+      margin-bottom: 14px !important;
+    }
+
+    .hero-about-panel .about-scroll-in:nth-child(3) > div {
+      padding-inline: 8px !important;
+    }
+
+    .hero-about-panel .about-scroll-in:nth-child(3) strong {
+      font-size: 1.45rem !important;
+    }
+
+    .hero-about-panel .about-scroll-in:nth-child(3) span {
+      font-size: 7px !important;
+    }
+
+    .hero-about-panel p {
+      font-size: clamp(12px, 3.2vw, 14px) !important;
+      line-height: 1.58 !important;
+      margin-bottom: 16px !important;
+    }
+
+    .hero-about-panel a {
+      padding: 10px 16px !important;
+      font-size: 10px !important;
+    }
+  }
+
   ::selection {
     background-color: var(--color-yellow);
     color: var(--color-dark);

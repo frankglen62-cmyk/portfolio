@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ScrollReveal } from '../components/animations/ScrollReveal';
 import { CustomIcon } from '../components/CustomIcon';
 
 const platforms = [

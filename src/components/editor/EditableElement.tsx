@@ -10,32 +10,52 @@ interface EditableElementProps {
 }
 
 export const EditableElement: React.FC<EditableElementProps> = ({ id, label, children, className, style }) => {
+  const [isMobileViewport, setIsMobileViewport] = React.useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  ));
   const {
     layout, editMode, selectedElement, setSelectedElement,
-    elementRefs, isDragging, dragState, scaleState, panelOpen, setPanelOpen,
-    computeGuides, registerElementLabel
+    elementRefs: elementRefsRef, isDragging, dragState: dragStateRef, scaleState: scaleStateRef,
+    panelOpen, setPanelOpen, registerElementLabel
   } = useVisualEditor();
 
-  const config = layout[id] || { x: 0, y: 0 };
-  const isSelected = editMode && selectedElement === id;
+  const mobileId = `${id}Mobile`;
+  const activeId = isMobileViewport && layout[mobileId] ? mobileId : id;
+  const config = layout[activeId] || layout[id] || { x: 0, y: 0 };
+  const isSelected = editMode && selectedElement === activeId;
   const hasScale = 'scale' in config;
+  const hasMobileConfig = Boolean(layout[mobileId]);
+  const transformStyle = {
+    '--editable-x': `${config.x || 0}px`,
+    '--editable-y': `${config.y || 0}px`,
+    '--editable-rotation': `${config.rotation || 0}deg`,
+  } as React.CSSProperties;
 
   useEffect(() => {
     if (label) registerElementLabel(id, label);
-  }, [id, label, registerElementLabel]);
+    if (label && hasMobileConfig) registerElementLabel(mobileId, `${label} (Mobile)`);
+  }, [id, label, hasMobileConfig, mobileId, registerElementLabel]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 809px)');
+    const sync = (event: MediaQueryListEvent) => setIsMobileViewport(event.matches);
+
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!editMode) return;
     e.stopPropagation();
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
 
-    setSelectedElement(id);
+    setSelectedElement(activeId);
     if (!panelOpen) setPanelOpen(true);
 
-    dragState.current = {
+    dragStateRef.current = {
       active: true,
-      id,
+      id: activeId,
       startX: e.clientX,
       startY: e.clientY,
       origX: config.x || 0,
@@ -46,10 +66,10 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
   const handleScalePointerDown = (e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    scaleState.current = {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    scaleStateRef.current = {
       active: true,
-      id,
+      id: activeId,
       startY: e.clientY,
       origScale: config.scale || 1,
     };
@@ -57,7 +77,10 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
 
   return (
     <div
-      ref={el => { elementRefs.current[id] = el; }}
+      ref={el => { elementRefsRef.current[activeId] = el; }}
+      data-editable-id={id}
+      data-active-editable-id={activeId}
+      data-edit-mode={editMode ? 'true' : 'false'}
       onPointerDown={handlePointerDown}
       onClick={e => {
         e.stopPropagation();
@@ -66,13 +89,14 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
       className={className}
       style={{
         ...style,
-        transform: `translate(${config.x || 0}px, ${config.y || 0}px) rotate(${config.rotation || 0}deg)`,
-        cursor: editMode ? (isDragging && dragState.current?.id === id ? 'grabbing' : 'grab') : undefined,
+        ...transformStyle,
+        transform: 'translate(var(--editable-x), var(--editable-y)) rotate(var(--editable-rotation))',
+        cursor: editMode ? (isDragging ? 'grabbing' : 'grab') : undefined,
         outline: isSelected ? '2px solid #fdb466' : editMode ? '1px dashed rgba(253,180,102,0.25)' : 'none',
         outlineOffset: '6px',
         touchAction: editMode ? 'none' : 'auto',
         zIndex: isSelected ? 100 : undefined,
-        pointerEvents: editMode ? 'auto' : (style?.pointerEvents as any) || undefined,
+        pointerEvents: editMode ? 'auto' : style?.pointerEvents,
         position: 'relative',
         userSelect: editMode ? 'none' : undefined,
       }}
@@ -83,18 +107,17 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
       {isSelected && hasScale && (
         <>
           {[
-            { t: '-8px', l: '-8px' },
-            { t: '-8px', r: '-8px' },
-            { b: '-8px', l: '-8px' },
-            { b: '-8px', r: '-8px' },
+            { top: '-8px', left: '-8px' },
+            { top: '-8px', right: '-8px' },
+            { bottom: '-8px', left: '-8px' },
+            { bottom: '-8px', right: '-8px' },
           ].map((pos, i) => (
             <div
               key={i}
               onPointerDown={handleScalePointerDown}
               style={{
                 position: 'absolute',
-                top: pos.t, bottom: (pos as any).b,
-                left: pos.l, right: (pos as any).r,
+                ...pos,
                 width: '14px', height: '14px',
                 background: '#fdb466',
                 border: '2px solid white',

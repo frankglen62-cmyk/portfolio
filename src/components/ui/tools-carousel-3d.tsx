@@ -184,7 +184,9 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
         const gap = 40;
         const peekAmount = -55;
         const D = 1350;
-        let y = 0, z = 0, rot = 0;
+        let y: number;
+        let z: number;
+        let rot: number;
 
         if (absOffset <= 1) {
           const t = absOffset;

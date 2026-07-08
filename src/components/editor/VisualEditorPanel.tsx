@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useDragControls } from 'framer-motion';
-import { useVisualEditor, getFieldsForElement } from '../../contexts/VisualEditorContext';
+import { useVisualEditor, getFieldsForElement, type FieldDef } from '../../contexts/VisualEditorContext';
 
 /* ═══════════════════════════════════════════
    SVG ICONS
@@ -34,17 +34,49 @@ const ResetIcon = () => (
 );
 
 export const VisualEditorPanel: React.FC = () => {
+  const [isMobileViewport, setIsMobileViewport] = React.useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  ));
+  const [viewportSize, setViewportSize] = React.useState(() => ({
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+  }));
   const dragControls = useDragControls();
   const {
-    layout, editMode, setEditMode, panelOpen, setPanelOpen,
+    layout, editMode, setEditMode, setPanelOpen,
     selectedElement, setSelectedElement, updateProp, saveConfig, resetConfig,
     isSaving, saveStatus, elementLabels, guides
   } = useVisualEditor();
 
-  const renderField = (id: string, field: any) => {
+  React.useEffect(() => {
+    const query = window.matchMedia('(max-width: 809px)');
+    const sync = () => {
+      setIsMobileViewport(query.matches);
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    sync();
+    query.addEventListener('change', sync);
+    window.addEventListener('resize', sync);
+    return () => {
+      query.removeEventListener('change', sync);
+      window.removeEventListener('resize', sync);
+    };
+  }, []);
+
+  const visibleElementIds = Object.keys(layout).filter((id) => (
+    isMobileViewport ? id.endsWith('Mobile') : !id.endsWith('Mobile')
+  ));
+  const panelClassName = isMobileViewport
+    ? 'w-[236px] max-h-[58svh] flex flex-col rounded-xl overflow-hidden shadow-2xl'
+    : 'w-[280px] max-h-[85vh] flex flex-col rounded-xl overflow-hidden shadow-2xl';
+  const panelOffset = isMobileViewport ? { left: 10, bottom: 10 } : { left: 24, bottom: 24 };
+
+  const renderField = (id: string, field: FieldDef) => {
     const config = layout[id];
+    if (!config) return null;
     if (!(field.key in config)) return null;
-    const val = (config as any)[field.key];
+    const val = config[field.key as keyof typeof config];
 
     if (field.type === 'color') {
       return (
@@ -99,11 +131,11 @@ export const VisualEditorPanel: React.FC = () => {
         dragListener={false}
         dragMomentum={false}
         className="fixed z-[9999] flex flex-col items-start"
-        style={{ left: 24, bottom: 24 }}
+        style={panelOffset}
       >
         {editMode ? (
           <div 
-            className="w-[280px] max-h-[85vh] flex flex-col rounded-xl overflow-hidden shadow-2xl"
+            className={panelClassName}
             style={{
               background: 'rgba(20, 20, 25, 0.95)', backdropFilter: 'blur(24px)',
               border: '1px solid rgba(255,255,255,0.1)', color: 'white',
@@ -113,13 +145,18 @@ export const VisualEditorPanel: React.FC = () => {
           >
             {/* Panel Header (Drag Handle) */}
             <div 
-              className="px-4 py-3 border-b border-white/10 shrink-0 cursor-move flex items-center justify-between"
+              className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-white/10 shrink-0 cursor-move flex items-center justify-between`}
               style={{ background: 'rgba(20, 20, 25, 0.98)' }}
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-2">
                 <MoveIcon />
-                <h2 className="text-xs font-bold tracking-wide uppercase text-white/90">Visual Editor</h2>
+                <div>
+                  <h2 className="text-xs font-bold tracking-wide uppercase text-white/90">Visual Editor</h2>
+                  <p className="text-[9px] font-medium uppercase tracking-wide text-white/45">
+                    {isMobileViewport ? 'Mobile' : 'Desktop'} {viewportSize.width}x{viewportSize.height}
+                  </p>
+                </div>
               </div>
               <button 
                 onPointerDown={(e) => e.stopPropagation()}
@@ -131,9 +168,9 @@ export const VisualEditorPanel: React.FC = () => {
             </div>
 
             {/* Actions (Save / Reset) */}
-            <div className="px-4 py-3 border-b border-white/10 shrink-0 flex gap-2">
+            <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-white/10 shrink-0 flex gap-2`}>
               <button onClick={saveConfig} disabled={isSaving}
-                className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[11px] font-bold transition-all"
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition-all"
                 style={{
                   background: saveStatus === 'success' ? '#16a34a' : saveStatus === 'error' ? '#dc2626' : 'linear-gradient(135deg, #fdb466, #f97316)',
                   color: 'white',
@@ -142,7 +179,7 @@ export const VisualEditorPanel: React.FC = () => {
                 <SaveIcon /> {isSaving ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Error!' : 'Save All'}
               </button>
               <button onClick={resetConfig}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-bold bg-white/10 hover:bg-white/20 transition text-white/80 hover:text-white"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-bold bg-white/10 hover:bg-white/20 transition text-white/80 hover:text-white"
               >
                 <ResetIcon /> Reset
               </button>
@@ -150,12 +187,14 @@ export const VisualEditorPanel: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {/* Element List */}
-              <div className="px-4 py-3">
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-2">Elements</p>
+              <div className={isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'}>
+                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-2">
+                  {isMobileViewport ? 'Mobile Elements' : 'Desktop Elements'}
+                </p>
                 <div className="space-y-1">
-                  {Object.keys(layout).map(id => (
+                  {visibleElementIds.map(id => (
                     <button key={id} onClick={() => setSelectedElement(id)}
-                      className={`w-full text-left px-2 py-2 rounded text-[11px] font-medium transition-all flex items-center gap-2 ${
+                      className={`w-full text-left px-2 py-1.5 rounded text-[10px] font-medium transition-all flex items-center gap-2 ${
                         selectedElement === id
                           ? 'bg-orange/20 text-orange border border-orange/30'
                           : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
@@ -169,7 +208,7 @@ export const VisualEditorPanel: React.FC = () => {
 
               {/* Selected Element Properties */}
               {selectedElement && layout[selectedElement] && (
-                <div className="px-4 py-3 border-t border-white/10">
+                <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-t border-white/10`}>
                   <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-3">
                     Edit — {elementLabels[selectedElement] || selectedElement}
                   </p>
@@ -187,7 +226,7 @@ export const VisualEditorPanel: React.FC = () => {
                         className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-orange" />
                     </div>
                   </div>
-                  {getFieldsForElement(selectedElement).map((field: any) => renderField(selectedElement, field))}
+                  {getFieldsForElement(selectedElement).map((field) => renderField(selectedElement, field))}
                   <div className="mt-3 p-2 rounded bg-white/5 text-[9px] text-gray-400 leading-relaxed">
                     <strong>Tips:</strong> Arrow keys nudge. Shift+Arrow for 10px. Drag on screen to move. Corner handles scale images.
                   </div>

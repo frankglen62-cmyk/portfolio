@@ -12,15 +12,11 @@ import { EcommercePlatforms } from './sections/EcommercePlatforms';
 import { Services } from './sections/Services';
 import { Portfolio } from './sections/Portfolio';
 import { Skills } from './sections/Skills';
-import { Certifications } from './sections/Certifications';
 import { WhyHireMe } from './sections/WhyHireMe';
 import { Contact } from './sections/Contact';
 import { Footer } from './sections/Footer';
 
 gsap.registerPlugin(ScrollTrigger);
-
-import { SamplePage } from './pages/SamplePage';
-import { CardCarousel } from './pages/CardCarousel';
 
 const App: React.FC = () => {
 
@@ -29,14 +25,6 @@ const App: React.FC = () => {
     const timer = setTimeout(() => ScrollTrigger.refresh(), 500);
     return () => clearTimeout(timer);
   }, []);
-
-  if (window.location.pathname === '/sample') {
-    return <SamplePage />;
-  }
-
-  if (window.location.pathname === '/cards') {
-    return <CardCarousel />;
-  }
 
   return (
     <VisualEditorProvider>
@@ -67,7 +55,6 @@ const AppContent: React.FC = () => {
         <EcommercePlatforms />
         <Tools />
         <Portfolio />
-        <Certifications />
         <WhyHireMe />
         <SocialMediaPlatforms />
         <Contact />

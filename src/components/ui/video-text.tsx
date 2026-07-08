@@ -1,21 +1,43 @@
-import React from 'react';
+import React from "react";
 
 export function VideoText({ children, src, className = "" }: { children: React.ReactNode; src: string; className?: string }) {
+  const maskId = React.useId();
+
   return (
-    <div className={`relative w-full h-full overflow-hidden flex items-center justify-center bg-black ${className}`}>
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute top-[2px] bottom-[2px] left-[2px] right-[2px] h-[calc(100%-4px)] w-[calc(100%-4px)] object-cover"
-        src={src}
-      />
-      <div className="absolute -inset-1 flex items-center justify-center bg-black text-white mix-blend-multiply">
-        <h1 className="text-[clamp(3.5rem,10vw,10rem)] font-black uppercase tracking-tighter text-white leading-none text-center">
-          {children}
-        </h1>
-      </div>
+    <div className={`relative w-full h-full flex items-center justify-center overflow-hidden pointer-events-none ${className}`}>
+      <svg className="absolute inset-0 w-full h-full">
+        <defs>
+          <mask id={maskId}>
+            <rect x="-20%" y="-20%" width="140%" height="140%" fill="black" />
+            <text
+              x="50%"
+              y="50%"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fill="white"
+              style={{ 
+                fontSize: 'clamp(3rem, 8vw, 8rem)', 
+                fontWeight: 900, 
+                textTransform: 'uppercase', 
+                letterSpacing: '-0.05em',
+                fontFamily: 'inherit'
+              }}
+            >
+              {children}
+            </text>
+          </mask>
+        </defs>
+        <foreignObject width="100%" height="100%" mask={`url(#${maskId})`}>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+            src={src}
+          />
+        </foreignObject>
+      </svg>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
+/* eslint-disable react-refresh/only-export-components */
+
 /* ═══════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════ */
@@ -53,8 +55,9 @@ export const BADGE_FIELDS: FieldDef[] = [
 ];
 
 export const getFieldsForElement = (id: string): FieldDef[] => {
-  if (id === 'characterImage') return IMAGE_FIELDS;
-  if (id === 'availableBadge') return BADGE_FIELDS;
+  const baseId = id.replace(/Mobile$/, '');
+  if (baseId === 'characterImage') return IMAGE_FIELDS;
+  if (baseId === 'availableBadge') return BADGE_FIELDS;
   return TEXT_FIELDS;
 };
 
@@ -62,14 +65,22 @@ export const getFieldsForElement = (id: string): FieldDef[] => {
    DEFAULTS
    ═══════════════════════════════════════════ */
 export const FALLBACK: LayoutConfig = {
-  heyTextLeft: { x: 0, y: 0, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  heyTextRight: { x: 0, y: 0, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  characterImage: { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
-  availableBadge: { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0 },
-  specializationText: { x: 0, y: 0, fontSize: '14px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.625', opacity: 0.65, color: '#1e1e1e', rotation: 0 },
-  iAmFrankText: { x: 0, y: 0, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  heyTextLeft: { x: -1, y: 75, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
+  heyTextRight: { x: 42, y: 74, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
+  characterImage: { x: 85, y: 336, scale: 1.35, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
+  availableBadge: { x: -22, y: 4, scale: 1, opacity: 1, rotation: 0 },
+  specializationText: { x: -10, y: 99, fontSize: '14px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.625', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  iAmFrankText: { x: -27, y: 28, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#1e1e1e', rotation: 0 },
   roleTitleText: { x: 0, y: 0, fontSize: 'clamp(1.2rem,3.5vw,3rem)', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: '1.05', opacity: 1, color: '#1e1e1e', rotation: 0 },
   aboutTitle: { x: 0, y: 0, fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#ffffff', rotation: 0 },
+  heyTextLeftMobile: { x: 0, y: 0, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
+  heyTextRightMobile: { x: 0, y: 0, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
+  characterImageMobile: { x: 0, y: 0, scale: 1.02, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
+  availableBadgeMobile: { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0 },
+  specializationTextMobile: { x: 0, y: 0, fontSize: '9px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  iAmFrankTextMobile: { x: 0, y: 10, fontSize: 'clamp(2.65rem,12.3vw,3.85rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.84', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  roleTitleTextMobile: { x: 0, y: 8, fontSize: 'clamp(1.06rem,5.25vw,1.6rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.96', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.3rem,10.5vw,3.35rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '0.92', opacity: 1, color: '#1e1e1e', rotation: 0 },
 };
 
 /* ═══════════════════════════════════════════
@@ -84,7 +95,7 @@ interface VisualEditorContextProps {
   setPanelOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedElement: string | null;
   setSelectedElement: React.Dispatch<React.SetStateAction<string | null>>;
-  updateProp: (id: string, prop: string, value: any) => void;
+  updateProp: (id: string, prop: string, value: string | number) => void;
   saveConfig: () => Promise<void>;
   resetConfig: () => void;
   isSaving: boolean;
@@ -129,6 +140,14 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     iAmFrankText: '"I AM FRANK" Text',
     roleTitleText: 'Role Title Text',
     aboutTitle: 'About Title',
+    heyTextLeftMobile: '"Hey," Text (Mobile)',
+    heyTextRightMobile: '"there" Text (Mobile)',
+    characterImageMobile: 'Character Image (Mobile)',
+    availableBadgeMobile: 'Available Badge (Mobile)',
+    specializationTextMobile: 'Specialization Text (Mobile)',
+    iAmFrankTextMobile: '"I AM FRANK" Text (Mobile)',
+    roleTitleTextMobile: 'Role Title Text (Mobile)',
+    aboutTitleMobile: 'About Title (Mobile)',
   });
 
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -136,14 +155,27 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; } | null>(null);
 
   useEffect(() => {
-    fetch('/api/layout-config')
-      .then(r => r.json())
-      .then(data => { 
-        // Merge fetched data with fallback so new properties like aboutTitle are added
-        setLayout({ ...FALLBACK, ...data }); 
-        setConfigLoaded(true); 
-      })
-      .catch(() => { setLayout(FALLBACK); setConfigLoaded(true); });
+    const loadLayout = async () => {
+      try {
+        const apiResponse = await fetch('/api/layout-config');
+        if (!apiResponse.ok) throw new Error('Layout API unavailable');
+        const data = await apiResponse.json();
+        setLayout({ ...FALLBACK, ...data });
+      } catch {
+        try {
+          const staticResponse = await fetch('/layout.json');
+          if (!staticResponse.ok) throw new Error('Static layout unavailable');
+          const data = await staticResponse.json();
+          setLayout({ ...FALLBACK, ...data });
+        } catch {
+          setLayout(FALLBACK);
+        }
+      } finally {
+        setConfigLoaded(true);
+      }
+    };
+
+    loadLayout();
   }, []);
 
   const saveConfig = async () => {
@@ -164,7 +196,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (confirm('Reset all positions and styles to defaults?')) setLayout(FALLBACK);
   };
 
-  const updateProp = (id: string, prop: string, value: any) => {
+  const updateProp = (id: string, prop: string, value: string | number) => {
     setLayout(prev => ({ ...prev, [id]: { ...prev[id], [prop]: value } }));
   };
 

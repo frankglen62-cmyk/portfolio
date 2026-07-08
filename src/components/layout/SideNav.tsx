@@ -15,11 +15,17 @@ export const SideNav: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
+  ));
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const hasMounted = useRef(false);
 
   useEffect(() => {
-    hasMounted.current = true;
+    const query = window.matchMedia('(max-width: 809px)');
+    const sync = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
   }, []);
 
   // Scroll visibility logic: Show only from Services section down to the bottom
@@ -116,16 +122,16 @@ export const SideNav: React.FC = () => {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -20, scale: 0.95 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[60]"
+          className="fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 md:bottom-auto md:left-8 md:top-1/2 md:-translate-x-0 md:-translate-y-1/2"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           <motion.div 
             layout
-            className="relative flex flex-col py-6 px-3 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden"
+            className="relative flex flex-row items-center gap-1 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden md:flex-col md:items-stretch md:gap-0 md:px-3 md:py-6"
             animate={{
-              width: isHovered ? [44, 280, 220] : (hasMounted.current ? [220, 120, 44] : 44),
-              borderRadius: isHovered ? [30, 140, 30] : (hasMounted.current ? [30, 80, 30] : 30),
+              width: isMobile ? 'auto' : isHovered ? [44, 280, 220] : 44,
+              borderRadius: isMobile ? 999 : isHovered ? [30, 140, 30] : 30,
             }}
             transition={{
               duration: 0.75,
@@ -141,7 +147,7 @@ export const SideNav: React.FC = () => {
                   key={item.id}
                   href={`#${item.id}`}
                   onClick={(e) => handleClick(e, item.id)}
-                  className="group relative flex items-center py-2 my-[2px] z-10 w-full outline-none"
+                  className="group relative flex h-9 w-8 items-center justify-center z-10 outline-none md:h-auto md:w-full md:justify-start md:py-2 md:my-[2px]"
                 >
                   {/* Subtle Active Pill Background (Reference Style) */}
                   <motion.div
@@ -150,7 +156,7 @@ export const SideNav: React.FC = () => {
                       opacity: isActive ? 1 : 0,
                     }}
                     transition={{ duration: 0.4 }}
-                    className="absolute inset-y-0 -left-1 -right-1 bg-dark/5 rounded-full z-0 pointer-events-none"
+                    className="absolute inset-0 md:inset-y-0 md:-left-1 md:-right-1 bg-dark/5 rounded-full z-0 pointer-events-none"
                   />
 
                   {/* Number - Fixed Width Container to keep aligned when thin */}
@@ -167,8 +173,8 @@ export const SideNav: React.FC = () => {
 
                   {/* Expanded Content (Line + Title) - Only visible on hover */}
                   <div
-                    className="flex items-center absolute left-[20px] right-0 whitespace-nowrap overflow-hidden transition-opacity duration-300 z-10"
-                    style={{ opacity: isHovered ? 1 : 0, pointerEvents: isHovered ? 'auto' : 'none' }}
+                    className="hidden md:flex items-center absolute left-[20px] right-0 whitespace-nowrap overflow-hidden transition-opacity duration-300 z-10"
+                    style={{ opacity: !isMobile && isHovered ? 1 : 0, pointerEvents: !isMobile && isHovered ? 'auto' : 'none' }}
                   >
                     {/* Connecting Line - Kept thin (h-[1px]) */}
                     <span
@@ -196,4 +202,3 @@ export const SideNav: React.FC = () => {
     </AnimatePresence>
   );
 };
-

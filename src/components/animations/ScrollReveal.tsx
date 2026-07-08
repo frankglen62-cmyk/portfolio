@@ -9,6 +9,7 @@ interface ScrollRevealProps {
   className?: string;
   amount?: number;
   staggerChildren?: number;
+  blur?: boolean;
 }
 
 export const ScrollReveal: React.FC<ScrollRevealProps> = ({
@@ -19,6 +20,7 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
   className = '',
   amount = 0.15,
   staggerChildren = 0,
+  blur = true,
 }) => {
   const variants: Variants = {
     hidden: {
@@ -26,16 +28,16 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
       y: direction === 'up' ? 30 : direction === 'down' ? -30 : 0,
       x: direction === 'right' ? -30 : direction === 'left' ? 30 : 0,
       scale: direction === 'scale' ? 0.96 : 1,
-      filter: 'blur(10px)',
+      ...(blur ? { filter: 'blur(10px)' } : {}),
     },
     visible: {
       opacity: 1,
       y: 0,
       x: 0,
       scale: 1,
-      filter: 'blur(0px)',
+      ...(blur ? { filter: 'blur(0px)' } : {}),
       transition: {
-        duration: 0.4, // Fast duration
+        duration,
         delay,
         ease: [0.25, 1, 0.5, 1], // Very snappy easeOutQuart
         when: staggerChildren ? 'beforeChildren' : undefined,

@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin, type ViteDevServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import fs from 'fs';
 import path from 'path';
+import type { IncomingMessage, ServerResponse } from 'http';
 
-function layoutConfigPlugin() {
+function layoutConfigPlugin(): Plugin {
   const srcPath = () => path.resolve(process.cwd(), 'src/config/layout.json');
   const publicPath = () => path.resolve(process.cwd(), 'public/layout.json');
 
@@ -13,7 +14,7 @@ function layoutConfigPlugin() {
     try {
       const data = fs.readFileSync(srcPath(), 'utf-8');
       fs.writeFileSync(publicPath(), data);
-    } catch (e) { /* ignore if not found yet */ }
+    } catch { /* ignore if not found yet */ }
   };
 
   return {
@@ -21,22 +22,22 @@ function layoutConfigPlugin() {
     buildStart() {
       syncPublic();
     },
-    configureServer(server: any) {
+    configureServer(server: ViteDevServer) {
       syncPublic();
-      server.middlewares.use(async (req: any, res: any, next: any) => {
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         if (req.url === '/api/layout-config' && req.method === 'GET') {
           try {
             const data = fs.readFileSync(srcPath(), 'utf-8');
             res.setHeader('Content-Type', 'application/json');
             res.statusCode = 200;
             res.end(data);
-          } catch (err: any) {
+          } catch (err) {
             res.statusCode = 500;
-            res.end(JSON.stringify({ error: err.message }));
+            res.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }));
           }
         } else if (req.url === '/api/save-config' && req.method === 'POST') {
           let body = '';
-          req.on('data', (chunk: any) => { body += chunk.toString(); });
+          req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
           req.on('end', () => {
             try {
               const parsed = JSON.parse(body);
@@ -46,10 +47,10 @@ function layoutConfigPlugin() {
               res.setHeader('Content-Type', 'application/json');
               res.statusCode = 200;
               res.end(JSON.stringify({ success: true }));
-            } catch (err: any) {
+            } catch (err) {
               console.error(err);
               res.statusCode = 500;
-              res.end(JSON.stringify({ error: err.message }));
+              res.end(JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }));
             }
           });
         } else {
