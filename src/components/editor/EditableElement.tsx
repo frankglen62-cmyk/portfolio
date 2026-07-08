@@ -29,6 +29,8 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
     '--editable-x': `${config.x || 0}px`,
     '--editable-y': `${config.y || 0}px`,
     '--editable-rotation': `${config.rotation || 0}deg`,
+    '--editable-scale': `${config.scale ?? 1}`,
+    '--editable-opacity': `${config.opacity ?? 1}`,
   } as React.CSSProperties;
 
   useEffect(() => {
@@ -90,15 +92,15 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
       style={{
         ...style,
         ...transformStyle,
-        transform: 'translate(var(--editable-x), var(--editable-y)) rotate(var(--editable-rotation))',
+        transform: 'translate(var(--editable-x), var(--editable-y)) rotate(var(--editable-rotation)) scale(var(--editable-scale))',
         cursor: editMode ? (isDragging ? 'grabbing' : 'grab') : undefined,
         outline: isSelected ? '2px solid #fdb466' : editMode ? '1px dashed rgba(253,180,102,0.25)' : 'none',
         outlineOffset: '6px',
         touchAction: editMode ? 'none' : 'auto',
-        zIndex: isSelected ? 100 : undefined,
         pointerEvents: editMode ? 'auto' : style?.pointerEvents,
         position: 'relative',
         userSelect: editMode ? 'none' : undefined,
+        opacity: 'var(--editable-opacity)',
       }}
     >
       {children}

@@ -68,31 +68,36 @@ export const VisualEditorPanel: React.FC = () => {
     isMobileViewport ? id.endsWith('Mobile') : !id.endsWith('Mobile')
   ));
   const panelClassName = isMobileViewport
-    ? 'w-[236px] max-h-[58svh] flex flex-col rounded-xl overflow-hidden shadow-2xl'
-    : 'w-[280px] max-h-[85vh] flex flex-col rounded-xl overflow-hidden shadow-2xl';
+    ? 'w-[180px] max-h-[50svh] flex flex-col rounded-xl overflow-hidden shadow-2xl'
+    : 'w-[240px] max-h-[70vh] flex flex-col rounded-xl overflow-hidden shadow-2xl';
   const panelOffset = isMobileViewport ? { left: 10, bottom: 10 } : { left: 24, bottom: 24 };
 
   const renderField = (id: string, field: FieldDef) => {
     const config = layout[id];
     if (!config) return null;
-    if (!(field.key in config)) return null;
-    const val = config[field.key as keyof typeof config];
+    let val = config[field.key as keyof typeof config];
+    if (val === undefined) {
+      if (field.key === 'scale') val = 1;
+      else if (field.key === 'opacity') val = 1;
+      else if (field.key === 'rotation') val = 0;
+      else return null;
+    }
 
     if (field.type === 'color') {
       return (
         <div key={field.key} className="mb-3">
-          <label className="flex items-center justify-between text-xs font-medium text-gray-400 mb-1">
+          <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-1">
             {field.label}<span className="text-[10px] text-gray-500 font-mono">{val}</span>
           </label>
           <input type="color" value={val} onChange={e => updateProp(id, field.key, e.target.value)}
-            className="w-full h-8 rounded cursor-pointer border border-gray-700 bg-transparent" />
+            className="w-full h-8 rounded cursor-pointer border border-gray-300 bg-transparent" />
         </div>
       );
     }
     if (field.type === 'range') {
       return (
         <div key={field.key} className="mb-3">
-          <label className="flex items-center justify-between text-xs font-medium text-gray-400 mb-1">
+          <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-1">
             {field.label}<span className="text-[10px] text-gray-500 font-mono">{val}{field.unit || ''}</span>
           </label>
           <input type="range" min={field.min} max={field.max} step={field.step} value={val}
@@ -103,9 +108,9 @@ export const VisualEditorPanel: React.FC = () => {
     }
     return (
       <div key={field.key} className="mb-3">
-        <label className="block text-xs font-medium text-gray-400 mb-1">{field.label}</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
         <input type="text" value={val} onChange={e => updateProp(id, field.key, e.target.value)}
-          className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-orange" />
+          className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
       </div>
     );
   };
@@ -137,23 +142,23 @@ export const VisualEditorPanel: React.FC = () => {
           <div 
             className={panelClassName}
             style={{
-              background: 'rgba(20, 20, 25, 0.95)', backdropFilter: 'blur(24px)',
-              border: '1px solid rgba(255,255,255,0.1)', color: 'white',
+              background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(24px)',
+              border: '1px solid rgba(0,0,0,0.1)', color: '#1e1e1e',
             }}
             onPointerDown={e => e.stopPropagation()}
             onClick={e => e.stopPropagation()}
           >
             {/* Panel Header (Drag Handle) */}
             <div 
-              className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-white/10 shrink-0 cursor-move flex items-center justify-between`}
-              style={{ background: 'rgba(20, 20, 25, 0.98)' }}
+              className={`${isMobileViewport ? 'px-2 py-2' : 'px-4 py-3'} border-b border-gray-200 shrink-0 cursor-move flex items-center justify-between`}
+              style={{ background: 'rgba(255, 255, 255, 0.9)', touchAction: 'none' }}
               onPointerDown={(e) => dragControls.start(e)}
             >
               <div className="flex items-center gap-2">
                 <MoveIcon />
                 <div>
-                  <h2 className="text-xs font-bold tracking-wide uppercase text-white/90">Visual Editor</h2>
-                  <p className="text-[9px] font-medium uppercase tracking-wide text-white/45">
+                  <h2 className="text-xs font-bold tracking-wide uppercase text-gray-800">Visual Editor</h2>
+                  <p className="text-[9px] font-medium uppercase tracking-wide text-gray-500">
                     {isMobileViewport ? 'Mobile' : 'Desktop'} {viewportSize.width}x{viewportSize.height}
                   </p>
                 </div>
@@ -161,16 +166,16 @@ export const VisualEditorPanel: React.FC = () => {
               <button 
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => { setEditMode(false); setPanelOpen(false); setSelectedElement(null); }} 
-                className="text-white/50 hover:text-white transition"
+                className="text-gray-400 hover:text-gray-800 transition"
               >
                 <CloseIcon />
               </button>
             </div>
 
             {/* Actions (Save / Reset) */}
-            <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-white/10 shrink-0 flex gap-2`}>
+            <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-gray-200 shrink-0 flex gap-2`}>
               <button onClick={saveConfig} disabled={isSaving}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition-all"
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-sm"
                 style={{
                   background: saveStatus === 'success' ? '#16a34a' : saveStatus === 'error' ? '#dc2626' : 'linear-gradient(135deg, #fdb466, #f97316)',
                   color: 'white',
@@ -179,7 +184,7 @@ export const VisualEditorPanel: React.FC = () => {
                 <SaveIcon /> {isSaving ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Error!' : 'Save All'}
               </button>
               <button onClick={resetConfig}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-bold bg-white/10 hover:bg-white/20 transition text-white/80 hover:text-white"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-bold bg-gray-100 hover:bg-gray-200 transition text-gray-700 hover:text-gray-900 border border-gray-200"
               >
                 <ResetIcon /> Reset
               </button>
@@ -196,8 +201,8 @@ export const VisualEditorPanel: React.FC = () => {
                     <button key={id} onClick={() => setSelectedElement(id)}
                       className={`w-full text-left px-2 py-1.5 rounded text-[10px] font-medium transition-all flex items-center gap-2 ${
                         selectedElement === id
-                          ? 'bg-orange/20 text-orange border border-orange/30'
-                          : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
+                          ? 'bg-orange/10 text-orange border border-orange/30 shadow-sm'
+                          : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 border border-transparent'
                       }`}
                     >
                       {elementLabels[id] || id}
@@ -208,26 +213,26 @@ export const VisualEditorPanel: React.FC = () => {
 
               {/* Selected Element Properties */}
               {selectedElement && layout[selectedElement] && (
-                <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-t border-white/10`}>
+                <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-t border-gray-200`}>
                   <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-3">
                     Edit — {elementLabels[selectedElement] || selectedElement}
                   </p>
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-400 mb-1">X Position</label>
+                      <label className="block text-[10px] font-medium text-gray-600 mb-1">X Position</label>
                       <input type="number" value={layout[selectedElement].x}
                         onChange={e => updateProp(selectedElement, 'x', Number(e.target.value))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-orange" />
+                        className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[11px] text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-400 mb-1">Y Position</label>
+                      <label className="block text-[10px] font-medium text-gray-600 mb-1">Y Position</label>
                       <input type="number" value={layout[selectedElement].y}
                         onChange={e => updateProp(selectedElement, 'y', Number(e.target.value))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-orange" />
+                        className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[11px] text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
                     </div>
                   </div>
                   {getFieldsForElement(selectedElement).map((field) => renderField(selectedElement, field))}
-                  <div className="mt-3 p-2 rounded bg-white/5 text-[9px] text-gray-400 leading-relaxed">
+                  <div className="mt-3 p-2 rounded bg-gray-100 border border-gray-200 text-[9px] text-gray-600 leading-relaxed">
                     <strong>Tips:</strong> Arrow keys nudge. Shift+Arrow for 10px. Drag on screen to move. Corner handles scale images.
                   </div>
                 </div>

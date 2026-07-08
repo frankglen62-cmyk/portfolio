@@ -162,7 +162,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               style={{
                 fontSize: getLayout('heyTextLeft')?.fontSize, fontWeight: getLayout('heyTextLeft')?.fontWeight,
                 letterSpacing: getLayout('heyTextLeft')?.letterSpacing, lineHeight: getLayout('heyTextLeft')?.lineHeight,
-                opacity: getLayout('heyTextLeft')?.opacity, color: getLayout('heyTextLeft')?.color,
+                color: getLayout('heyTextLeft')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -177,7 +177,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               style={{
                 fontSize: getLayout('heyTextRight')?.fontSize, fontWeight: getLayout('heyTextRight')?.fontWeight,
                 letterSpacing: getLayout('heyTextRight')?.letterSpacing, lineHeight: getLayout('heyTextRight')?.lineHeight,
-                opacity: getLayout('heyTextRight')?.opacity, color: getLayout('heyTextRight')?.color,
+                color: getLayout('heyTextRight')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -199,7 +199,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
             className="h-full"
           >
             <div ref={portraitPoseRef} className="h-full origin-bottom will-change-transform">
-              <EditableElement id="characterImage" className="h-full">
+              <EditableElement id="characterImage" className="h-full" style={{ transformOrigin: 'bottom' }}>
                 <img
                   src="/frank-profile.png"
                   alt="Frank Glen Martin"
@@ -208,8 +208,6 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
                   style={{
                     width: getLayout('characterImage')?.width,
                     height: getLayout('characterImage')?.height,
-                    transform: `scale(${getLayout('characterImage')?.scale || 1})`,
-                    opacity: getLayout('characterImage')?.opacity,
                     pointerEvents: 'none',
                   }}
                 />
@@ -228,7 +226,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.8 }}
               className="flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-5 py-3 rounded-full border border-dark/5 shadow-sm origin-left"
-              style={{ transform: `scale(${getLayout('availableBadge')?.scale || 1})`, opacity: getLayout('availableBadge')?.opacity }}
+              style={{ opacity: getLayout('availableBadge')?.opacity }}
             >
               <span className="w-2.5 h-2.5 rounded-full bg-orange shrink-0" />
               <span className="font-body font-medium text-[13px] text-dark">Available for new opportunities</span>
@@ -246,7 +244,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               style={{
                 fontSize: getLayout('specializationText')?.fontSize, fontWeight: getLayout('specializationText')?.fontWeight,
                 letterSpacing: getLayout('specializationText')?.letterSpacing, lineHeight: getLayout('specializationText')?.lineHeight,
-                opacity: getLayout('specializationText')?.opacity, color: getLayout('specializationText')?.color,
+                color: getLayout('specializationText')?.color,
               }}
               wrapperFramerProps={{
                 hidden: { opacity: 0 },
@@ -273,7 +271,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               style={{
                 fontSize: getLayout('iAmFrankText')?.fontSize, fontWeight: getLayout('iAmFrankText')?.fontWeight,
                 letterSpacing: getLayout('iAmFrankText')?.letterSpacing, lineHeight: getLayout('iAmFrankText')?.lineHeight,
-                opacity: getLayout('iAmFrankText')?.opacity, color: getLayout('iAmFrankText')?.color,
+                color: getLayout('iAmFrankText')?.color,
               }}
             >
               I Am<br />Frank
@@ -294,7 +292,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               style={{
                 fontSize: getLayout('roleTitleText')?.fontSize, fontWeight: getLayout('roleTitleText')?.fontWeight,
                 letterSpacing: getLayout('roleTitleText')?.letterSpacing, lineHeight: getLayout('roleTitleText')?.lineHeight,
-                opacity: getLayout('roleTitleText')?.opacity, color: getLayout('roleTitleText')?.color,
+                color: getLayout('roleTitleText')?.color,
               }}
             >
               Ecommerce<br />Virtual<br />Assistant

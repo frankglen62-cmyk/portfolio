@@ -33,6 +33,7 @@ export type FieldType = 'text' | 'number' | 'range' | 'color';
 export interface FieldDef { key: string; label: string; type: FieldType; min?: number; max?: number; step?: number; unit?: string; }
 
 export const TEXT_FIELDS: FieldDef[] = [
+  { key: 'scale', label: 'Scale', type: 'range', min: 0.3, max: 5, step: 0.05 },
   { key: 'fontSize', label: 'Font Size', type: 'text' },
   { key: 'fontWeight', label: 'Font Weight', type: 'range', min: 100, max: 900, step: 100 },
   { key: 'letterSpacing', label: 'Letter Spacing', type: 'text' },
@@ -42,14 +43,14 @@ export const TEXT_FIELDS: FieldDef[] = [
   { key: 'rotation', label: 'Rotation', type: 'range', min: -180, max: 180, step: 1, unit: '°' },
 ];
 export const IMAGE_FIELDS: FieldDef[] = [
-  { key: 'scale', label: 'Scale', type: 'range', min: 0.3, max: 2, step: 0.05 },
+  { key: 'scale', label: 'Scale', type: 'range', min: 0.3, max: 5, step: 0.05 },
   { key: 'opacity', label: 'Opacity', type: 'range', min: 0, max: 1, step: 0.05 },
   { key: 'rotation', label: 'Rotation', type: 'range', min: -180, max: 180, step: 1, unit: '°' },
   { key: 'width', label: 'Width', type: 'text' },
   { key: 'height', label: 'Height', type: 'text' },
 ];
 export const BADGE_FIELDS: FieldDef[] = [
-  { key: 'scale', label: 'Scale', type: 'range', min: 0.5, max: 2, step: 0.05 },
+  { key: 'scale', label: 'Scale', type: 'range', min: 0.5, max: 5, step: 0.05 },
   { key: 'opacity', label: 'Opacity', type: 'range', min: 0, max: 1, step: 0.05 },
   { key: 'rotation', label: 'Rotation', type: 'range', min: -180, max: 180, step: 1, unit: '°' },
 ];
@@ -73,9 +74,9 @@ export const FALLBACK: LayoutConfig = {
   iAmFrankText: { x: -27, y: 28, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#1e1e1e', rotation: 0 },
   roleTitleText: { x: 0, y: 0, fontSize: 'clamp(1.2rem,3.5vw,3rem)', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: '1.05', opacity: 1, color: '#1e1e1e', rotation: 0 },
   aboutTitle: { x: 0, y: 0, fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#ffffff', rotation: 0 },
-  heyTextLeftMobile: { x: 0, y: 0, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
-  heyTextRightMobile: { x: 0, y: 0, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  characterImageMobile: { x: 0, y: 0, scale: 1.02, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
+  heyTextLeftMobile: { x: -7, y: 81, scale: 0.60, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
+  heyTextRightMobile: { x: 33, y: 82, scale: 0.60, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
+  characterImageMobile: { x: -6, y: 855, scale: 3.55, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
   availableBadgeMobile: { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0 },
   specializationTextMobile: { x: 0, y: 0, fontSize: '9px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#1e1e1e', rotation: 0 },
   iAmFrankTextMobile: { x: 0, y: 10, fontSize: 'clamp(2.65rem,12.3vw,3.85rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.84', opacity: 1, color: '#1e1e1e', rotation: 0 },
