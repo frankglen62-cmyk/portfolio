@@ -216,6 +216,21 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           </motion.div>
         </div>
 
+        {/* Fade & Blur Effects (Behind text) */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[22svh] z-[25] pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, rgba(240,241,243,0) 0%, rgba(240,241,243,0.18) 58%, rgba(240,241,243,0.68) 100%)' }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-[12svh] z-[26] pointer-events-none"
+          style={{
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            opacity: 0.45,
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
+          }}
+        />
         <div
           className={`hero-scroll-out hero-badge-wrap absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] ${editMode ? 'z-[80]' : 'z-30'} hidden md:block`}
         >
@@ -259,7 +274,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] ${editMode ? 'z-[80]' : 'z-30'}`}
+          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] ${editMode ? 'z-[80]' : 'z-[60]'} transform-gpu`}
         >
           <EditableElement id="iAmFrankText">
             <motion.h1
@@ -280,7 +295,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] ${editMode ? 'z-[80]' : 'z-30'} text-right`}
+          className={`hero-scroll-out absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] ${editMode ? 'z-[80]' : 'z-[60]'} text-right transform-gpu`}
         >
           <EditableElement id="roleTitleText">
             <motion.h2
@@ -359,20 +374,6 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           </div>
         </div>
 
-        <div
-          className="absolute inset-x-0 bottom-0 h-[22svh] z-[25] pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, rgba(240,241,243,0) 0%, rgba(240,241,243,0.18) 58%, rgba(240,241,243,0.68) 100%)' }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 h-[12svh] z-[26] pointer-events-none"
-          style={{
-            backdropFilter: 'blur(3px)',
-            WebkitBackdropFilter: 'blur(3px)',
-            opacity: 0.45,
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 72%)',
-          }}
-        />
       </div>
     </section>
   );
