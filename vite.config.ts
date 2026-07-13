@@ -62,6 +62,7 @@ function layoutConfigPlugin(): Plugin {
 }
 
 export default defineConfig({
+  base: '/portfolio/',
   plugins: [
     react(),
     tailwindcss(),
