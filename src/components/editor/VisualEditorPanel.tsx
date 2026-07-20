@@ -69,8 +69,8 @@ export const VisualEditorPanel: React.FC = () => {
   ));
   const panelClassName = isMobileViewport
     ? 'w-[180px] max-h-[50svh] flex flex-col rounded-xl overflow-hidden shadow-2xl'
-    : 'w-[240px] max-h-[70vh] flex flex-col rounded-xl overflow-hidden shadow-2xl';
-  const panelOffset = isMobileViewport ? { left: 10, bottom: 10 } : { left: 24, bottom: 24 };
+    : 'w-[205px] max-h-[60svh] flex flex-col rounded-lg overflow-hidden shadow-xl';
+  const panelOffset = isMobileViewport ? { left: 10, bottom: 10 } : { left: 16, bottom: 16 };
 
   const renderField = (id: string, field: FieldDef) => {
     const config = layout[id];
@@ -150,7 +150,7 @@ export const VisualEditorPanel: React.FC = () => {
           >
             {/* Panel Header (Drag Handle) */}
             <div 
-              className={`${isMobileViewport ? 'px-2 py-2' : 'px-4 py-3'} border-b border-gray-200 shrink-0 cursor-move flex items-center justify-between`}
+              className="px-3 py-2 border-b border-gray-200 shrink-0 cursor-move flex items-center justify-between"
               style={{ background: 'rgba(255, 255, 255, 0.9)', touchAction: 'none' }}
               onPointerDown={(e) => dragControls.start(e)}
             >
@@ -173,7 +173,7 @@ export const VisualEditorPanel: React.FC = () => {
             </div>
 
             {/* Actions (Save / Reset) */}
-            <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-b border-gray-200 shrink-0 flex gap-2`}>
+            <div className="px-3 py-2 border-b border-gray-200 shrink-0 flex gap-2">
               <button onClick={saveConfig} disabled={isSaving}
                 className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-sm"
                 style={{
@@ -192,7 +192,7 @@ export const VisualEditorPanel: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto custom-scrollbar">
               {/* Element List */}
-              <div className={isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'}>
+              <div className="px-3 py-2">
                 <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-2">
                   {isMobileViewport ? 'Mobile Elements' : 'Desktop Elements'}
                 </p>
@@ -213,7 +213,7 @@ export const VisualEditorPanel: React.FC = () => {
 
               {/* Selected Element Properties */}
               {selectedElement && layout[selectedElement] && (
-                <div className={`${isMobileViewport ? 'px-3 py-2' : 'px-4 py-3'} border-t border-gray-200`}>
+                <div className="px-3 py-2 border-t border-gray-200">
                   <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-3">
                     Edit — {elementLabels[selectedElement] || selectedElement}
                   </p>

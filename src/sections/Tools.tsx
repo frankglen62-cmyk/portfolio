@@ -99,7 +99,7 @@ export const Tools: React.FC = () => {
   return (
     <section
       id="tools"
-      className="relative overflow-hidden"
+      className="relative min-h-[100svh] overflow-hidden md:min-h-0"
       style={{ background: '#000000' }}
     >
       {/* Top Centered Header — dark theme with premium typography */}

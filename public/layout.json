@@ -1,7 +1,7 @@
 {
   "heyTextLeft": {
-    "x": -1,
-    "y": 75,
+    "x": 136,
+    "y": 122,
     "fontSize": "clamp(4rem,14vw,12rem)",
     "fontWeight": 400,
     "letterSpacing": "0em",
@@ -11,8 +11,8 @@
     "rotation": 0
   },
   "heyTextRight": {
-    "x": 42,
-    "y": 74,
+    "x": -2,
+    "y": 122,
     "fontSize": "clamp(4rem,14vw,12rem)",
     "fontWeight": 400,
     "letterSpacing": "0em",
@@ -22,9 +22,9 @@
     "rotation": 0
   },
   "characterImage": {
-    "x": 85,
-    "y": 336,
-    "scale": 1.35,
+    "x": 78,
+    "y": 374,
+    "scale": 1.45,
     "opacity": 1,
     "rotation": 0,
     "width": "auto",
@@ -79,6 +79,90 @@
     "lineHeight": "1",
     "opacity": 1,
     "color": "#ffffff",
+    "rotation": 0
+  },
+  "heyTextLeftMobile": {
+    "x": -31,
+    "y": 120,
+    "fontSize": "clamp(2.5rem,12vw,3.4rem)",
+    "fontWeight": 400,
+    "letterSpacing": "0em",
+    "lineHeight": "1",
+    "opacity": 1,
+    "color": "#24272b",
+    "rotation": 0
+  },
+  "heyTextRightMobile": {
+    "x": 66,
+    "y": 120,
+    "fontSize": "clamp(2.5rem,12vw,3.4rem)",
+    "fontWeight": 400,
+    "letterSpacing": "0em",
+    "lineHeight": "1",
+    "opacity": 1,
+    "color": "#24272b",
+    "rotation": 0
+  },
+  "characterImageMobile": {
+    "x": -6,
+    "y": 892,
+    "scale": 3.55,
+    "opacity": 1,
+    "rotation": 0,
+    "width": "auto",
+    "height": "100%"
+  },
+  "availableBadgeMobile": {
+    "x": -3,
+    "y": -18,
+    "scale": 1,
+    "opacity": 1,
+    "rotation": 0
+  },
+  "specializationTextMobile": {
+    "x": 0,
+    "y": 0,
+    "fontSize": "8.5px",
+    "fontWeight": 500,
+    "letterSpacing": "0em",
+    "lineHeight": "1.35",
+    "opacity": 1,
+    "color": "#20242a",
+    "rotation": 0
+  },
+  "iAmFrankTextMobile": {
+    "x": 19,
+    "y": 15,
+    "scale": 1.35,
+    "fontSize": "clamp(2.35rem,12vw,3.15rem)",
+    "fontWeight": 900,
+    "letterSpacing": "0em",
+    "lineHeight": "0.88",
+    "opacity": 1,
+    "color": "#f8f6f0",
+    "rotation": 0
+  },
+  "roleTitleTextMobile": {
+    "x": -6,
+    "y": 21,
+    "scale": 1.1,
+    "fontSize": "clamp(1.05rem,5.1vw,1.35rem)",
+    "fontWeight": 700,
+    "letterSpacing": "0em",
+    "lineHeight": "1.02",
+    "opacity": 1,
+    "color": "#f8f6f0",
+    "rotation": 0
+  },
+  "aboutTitleMobile": {
+    "x": 0,
+    "y": 0,
+    "fontSize": "clamp(2.45rem,11vw,2.75rem)",
+    "fontWeight": 700,
+    "letterSpacing": "-0.03em",
+    "lineHeight": "0.92",
+    "opacity": 1,
+    "color": "#1e1e1e",
     "rotation": 0
   }
 }

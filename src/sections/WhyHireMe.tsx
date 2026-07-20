@@ -6,7 +6,7 @@ export const WhyHireMe: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="why-hire-me" ref={sectionRef} className="relative overflow-hidden bg-cream-light py-20 md:py-28">
+    <section id="why-hire-me" ref={sectionRef} className="relative overflow-hidden bg-[#d8dbdf] py-20 md:py-28">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 md:grid-cols-[0.85fr_1.15fr] md:px-12">
         <ScrollReveal blur={false}>
           <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-dark/60 mb-4 block">

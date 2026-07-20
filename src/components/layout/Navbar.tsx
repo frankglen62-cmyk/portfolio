@@ -9,31 +9,30 @@ const navLinks = [
   { label: 'Skills', href: '#skills' },
 ];
 
-export const Navbar: React.FC = () => {
-  const [scrolled, setScrolled] = useState(false);
+interface NavbarProps {
+  isVisible: boolean;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 60);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+    if (!isVisible) setMobileOpen(false);
+  }, [isVisible]);
 
   return (
     <>
       <header
         data-hero-nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
-          scrolled ? 'glass-dark py-3 shadow-md text-white' : 'py-5 bg-transparent text-dark'
+        aria-hidden={!isVisible}
+        className={`fixed top-0 left-0 right-0 z-50 py-5 bg-transparent text-dark transition-[opacity,transform] duration-300 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
         }`}
       >
         <div className="w-full px-6 md:px-12 lg:px-16 flex items-center justify-between">
           <a
             href="#home"
-            className={`font-heading italic text-2xl md:text-[26px] transition-colors duration-300 ${scrolled ? 'text-white' : 'text-dark'}`}
+            className="font-heading italic text-2xl md:text-[26px] text-dark"
           >
             Frank.
           </a>
@@ -43,7 +42,7 @@ export const Navbar: React.FC = () => {
               <a
                 key={link.label}
                 href={link.href}
-                className={`font-body text-[14px] font-medium transition-colors duration-300 ${scrolled ? 'text-white/70 hover:text-white' : 'text-dark/70 hover:text-dark'}`}
+                className="font-body text-[14px] font-medium text-dark/70 hover:text-dark transition-colors duration-300"
               >
                 {link.label}
               </a>
@@ -54,7 +53,7 @@ export const Navbar: React.FC = () => {
             href="#contact"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
-            className={`hidden md:inline-flex font-body font-semibold text-[14px] rounded-full px-7 py-2.5 cursor-pointer transition-colors duration-300 ${scrolled ? 'bg-white text-dark hover:bg-white/90' : 'bg-dark text-white hover:bg-black'}`}
+            className="hidden md:inline-flex font-body font-semibold text-[14px] rounded-full px-7 py-2.5 cursor-pointer bg-dark text-white hover:bg-black transition-colors duration-300"
           >
             Contact
           </motion.a>
@@ -67,15 +66,15 @@ export const Navbar: React.FC = () => {
           >
             <motion.span
               animate={mobileOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-              className={`w-6 h-[2px] block transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-dark'}`}
+              className="w-6 h-[2px] block bg-dark"
             />
             <motion.span
               animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }}
-              className={`w-6 h-[2px] block transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-dark'}`}
+              className="w-6 h-[2px] block bg-dark"
             />
             <motion.span
               animate={mobileOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-              className={`w-6 h-[2px] block transition-colors duration-300 ${scrolled ? 'bg-white' : 'bg-dark'}`}
+              className="w-6 h-[2px] block bg-dark"
             />
           </button>
         </div>
@@ -83,7 +82,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu */}
       <AnimatePresence>
-        {mobileOpen && (
+        {mobileOpen && isVisible && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}

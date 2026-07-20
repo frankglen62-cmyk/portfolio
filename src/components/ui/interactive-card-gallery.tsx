@@ -1,48 +1,104 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { VideoText } from './video-text';
 import { ScrollReveal } from '../animations/ScrollReveal';
+import { ProjectMediaViewer, type ProjectViewerData } from './project-media-viewer';
 
-const cards = [
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
+const cards: ProjectViewerData[] = [
   {
     id: 1,
-    title: 'Cosmic Exploration',
-    description: 'Journey through the nebulae and discover celestial wonders beyond imagination.',
-    image: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1000&q=80',
-    gradient: 'from-indigo-500 via-purple-500 to-pink-500',
-    category: 'Astronomy',
+    title: 'Marketplace Operations',
+    description: 'A practical workflow for managing listings, orders, and daily store activity across ecommerce channels.',
+    image: asset('skills/platforms.webp'),
+    gradient: 'from-amber-400 via-slate-700 to-emerald-500',
+    category: 'Store Support',
+    media: [
+      {
+        id: 'marketplace-video-01',
+        type: 'video',
+        src: asset('projects/marketplace-operations/project-video-01.mp4'),
+        alt: 'Marketplace operations project video',
+        orientation: 'portrait',
+      },
+      {
+        id: 'marketplace-overview',
+        type: 'image',
+        src: asset('skills/platforms.webp'),
+        alt: 'Marketplace operations dashboard overview',
+        orientation: 'landscape',
+      },
+    ],
   },
   {
     id: 2,
-    title: 'Quantum Computing',
-    description: 'Exploring the future of computation through quantum mechanical phenomena.',
-    image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1000&q=80',
-    gradient: 'from-cyan-500 via-blue-500 to-indigo-500',
-    category: 'Technology',
+    title: 'Conversion-Ready Listings',
+    description: 'Clear product titles, structured attributes, polished images, and organized variations built to convert.',
+    image: asset('skills/product-listing.webp'),
+    gradient: 'from-orange-400 via-slate-700 to-blue-600',
+    category: 'Product Listing',
+    media: [
+      {
+        id: 'listing-overview',
+        type: 'image',
+        src: asset('skills/product-listing.webp'),
+        alt: 'Conversion-ready product listing sample',
+        orientation: 'landscape',
+      },
+    ],
   },
   {
     id: 3,
-    title: 'Neural Networks',
-    description: 'The intersection of biology and technology in the field of artificial intelligence.',
-    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1000&q=80',
-    gradient: 'from-green-400 via-emerald-500 to-teal-500',
-    category: 'AI',
+    title: 'Marketplace SEO Refresh',
+    description: 'Search-focused content improvements that make product pages easier to discover and easier to understand.',
+    image: asset('skills/seo-optimization.webp'),
+    gradient: 'from-teal-400 via-slate-800 to-yellow-400',
+    category: 'Search Growth',
+    media: [
+      {
+        id: 'seo-overview',
+        type: 'image',
+        src: asset('skills/seo-optimization.webp'),
+        alt: 'Marketplace SEO optimization sample',
+        orientation: 'landscape',
+      },
+    ],
   },
   {
     id: 4,
-    title: 'Biometric Authentication',
-    description: 'Securing digital identity through unique biological characteristics.',
-    image: 'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=1000&q=80',
-    gradient: 'from-amber-500 via-orange-500 to-red-500',
-    category: 'Security',
+    title: 'Product Research Brief',
+    description: 'Competitor, pricing, demand, and supplier insights distilled into confident product decisions.',
+    image: asset('skills/product-research.webp'),
+    gradient: 'from-amber-500 via-stone-700 to-emerald-700',
+    category: 'Research',
+    media: [
+      {
+        id: 'research-overview',
+        type: 'image',
+        src: asset('skills/product-research.webp'),
+        alt: 'Product and competitor research sample',
+        orientation: 'landscape',
+      },
+    ],
   },
   {
     id: 5,
-    title: 'Quantum Entanglement',
-    description: 'The mysterious connection between particles that transcends space and time.',
-    image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1000&q=80',
-    gradient: 'from-purple-500 via-violet-500 to-fuchsia-500',
-    category: 'Physics',
+    title: 'Inventory & Order Workflow',
+    description: 'A dependable system for stock checks, order processing, tracking updates, and fulfillment support.',
+    image: asset('skills/inventory-orders.webp'),
+    gradient: 'from-blue-500 via-slate-800 to-orange-500',
+    category: 'Fulfillment',
+    media: [
+      {
+        id: 'fulfillment-overview',
+        type: 'image',
+        src: asset('skills/inventory-orders.webp'),
+        alt: 'Inventory and order workflow sample',
+        orientation: 'landscape',
+      },
+    ],
   },
 ];
 
@@ -62,6 +118,8 @@ export const InteractiveCardGallery = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectViewerData | null>(null);
+  const [viewerOrigin, setViewerOrigin] = useState<DOMRect | null>(null);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
   const galleryRef = useRef<HTMLDivElement>(null);
 
@@ -90,7 +148,16 @@ export const InteractiveCardGallery = () => {
     setActiveIndex((prev) => (prev - 1 + cards.length) % cards.length);
   };
 
-  const handleCardClick = (index: number) => {
+  const openProject = (project: ProjectViewerData, element: Element | null) => {
+    setViewerOrigin(element?.getBoundingClientRect() ?? null);
+    setSelectedProject(project);
+  };
+
+  const handleCardClick = (index: number, event: React.MouseEvent<HTMLDivElement>) => {
+    if (index === activeIndex) {
+      openProject(cards[index], event.currentTarget);
+      return;
+    }
     setActiveIndex(index);
   };
 
@@ -118,7 +185,7 @@ export const InteractiveCardGallery = () => {
   };
 
   return (
-    <div className="relative w-full min-h-[100vh] py-16 bg-black overflow-hidden">
+    <div className="relative min-h-[100svh] w-full overflow-hidden bg-black py-6 sm:py-10 md:min-h-[100vh] md:py-16">
       <div
         className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black opacity-90 z-0"
         style={{
@@ -128,7 +195,7 @@ export const InteractiveCardGallery = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
       </div>
 
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 hidden overflow-hidden pointer-events-none md:block">
         {particles.map((particle, index) => (
           <div
             key={index}
@@ -140,24 +207,25 @@ export const InteractiveCardGallery = () => {
 
       <div
         ref={galleryRef}
-        className="relative w-full h-full flex flex-col items-center justify-center z-10 px-4 sm:px-6"
+        className="relative z-10 flex min-h-[calc(100svh-3rem)] w-full flex-col items-center justify-center px-3 sm:min-h-[calc(100svh-5rem)] sm:px-6 md:min-h-0"
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <ScrollReveal blur={false} className="w-full mb-12 md:mb-16 px-2 md:px-0 max-w-6xl mx-auto z-20">
-          <div className="w-full h-[180px] md:h-[250px] relative overflow-hidden">
+        <ScrollReveal blur={false} className="z-20 mx-auto mb-2 w-full max-w-6xl px-1 sm:mb-4 sm:px-2 md:mb-16 md:px-0">
+          <div className="relative h-[128px] w-full overflow-hidden sm:h-[150px] md:h-[250px]">
             <VideoText src="https://cdn.magicui.design/ocean-small.webm">
               My Project
             </VideoText>
           </div>
         </ScrollReveal>
 
-        <div className="relative w-full max-w-[1400px] h-[550px] flex items-center justify-center mt-4">
+        <div className="relative mt-0 flex h-[360px] w-full max-w-[1400px] items-center justify-center sm:h-[450px] md:mt-4 md:h-[550px]">
           {cards.map((card, index) => (
             <motion.div
               key={card.id}
-              className="absolute w-[90vw] max-w-4xl rounded-2xl cursor-pointer transition-all duration-300 ease-out"
+              data-project-card={card.id}
+              className="absolute w-[94vw] max-w-4xl cursor-pointer rounded-2xl transition-all duration-300 ease-out sm:w-[90vw]"
               style={{
                 ...calculateCardStyles(index),
                 transition: 'all 0.5s cubic-bezier(0.19, 1, 0.22, 1)',
@@ -166,7 +234,7 @@ export const InteractiveCardGallery = () => {
                 scale: index === activeIndex ? 1.02 : 1,
                 transition: { duration: 0.2 },
               }}
-              onClick={() => handleCardClick(index)}
+              onClick={(event) => handleCardClick(index, event)}
             >
               {index === activeIndex && (
                 <div
@@ -190,21 +258,23 @@ export const InteractiveCardGallery = () => {
                   <img
                     src={card.image}
                     alt={card.title}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover z-0"
                   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent z-10" />
                   <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-20 mix-blend-overlay z-10`} />
 
-                  <div className="absolute top-4 right-4 z-20">
-                    <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-xs font-medium text-white shadow-lg">
+                  <div className="absolute right-3 top-3 z-20 sm:right-4 sm:top-4">
+                    <span className="rounded-full border border-white/20 bg-black/25 px-2.5 py-1 text-[10px] font-semibold uppercase text-white shadow-lg backdrop-blur-md sm:px-3 sm:text-xs">
                       {card.category}
                     </span>
                   </div>
 
-                  <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8 z-20 flex flex-col">
-                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 drop-shadow-md">{card.title}</h3>
-                    <p className="text-gray-200 text-sm sm:text-base max-w-2xl mb-6 drop-shadow-md">{card.description}</p>
+                  <div className="absolute inset-x-0 bottom-0 z-20 flex flex-col p-5 sm:p-8">
+                    <h3 className="mb-1.5 text-xl font-bold text-white drop-shadow-md sm:mb-2 sm:text-3xl">{card.title}</h3>
+                    <p className="mb-4 max-w-2xl text-xs leading-relaxed text-gray-200 drop-shadow-md sm:mb-6 sm:text-base">{card.description}</p>
 
                     {index === activeIndex && (
                       <motion.div
@@ -222,9 +292,14 @@ export const InteractiveCardGallery = () => {
                           ))}
                         </div>
                         <button
-                          className="px-5 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-semibold shadow-[0_4px_12px_rgba(0,0,0,0.1)] transform transition-all duration-300 hover:bg-white/20 hover:scale-105"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openProject(card, event.currentTarget.closest('[data-project-card]'));
+                          }}
+                          className="rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-white/20 sm:px-5 sm:py-2 sm:text-sm"
                         >
-                          Explore
+                          View Project
                         </button>
                       </motion.div>
                     )}
@@ -235,25 +310,23 @@ export const InteractiveCardGallery = () => {
           ))}
         </div>
 
-        <div className="mt-10 flex items-center justify-center space-x-8 z-20">
+        <div className="z-20 mt-2 flex items-center justify-center space-x-4 sm:mt-4 sm:space-x-6 md:mt-10 md:space-x-8">
           <button
             onClick={prevCard}
-            className="p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200 group"
+            className="group rounded-full bg-white/10 p-2.5 backdrop-blur-sm transition-all duration-200 hover:bg-white/20 md:p-3"
             aria-label="Previous project"
           >
-            <svg className="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="h-5 w-5 text-white transition-transform group-hover:scale-110 md:h-6 md:w-6" />
           </button>
 
-          <div className="flex space-x-2">
+          <div className="flex space-x-1.5 sm:space-x-2">
             {cards.map((_, index) => (
               <button
                 key={index}
-                onClick={() => handleCardClick(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                onClick={() => setActiveIndex(index)}
+                className={`h-2.5 w-2.5 rounded-full transition-all duration-200 md:h-3 md:w-3 ${
                   index === activeIndex
-                    ? 'bg-white w-6'
+                    ? 'w-5 bg-white md:w-6'
                     : 'bg-white/30 hover:bg-white/50'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
@@ -263,12 +336,10 @@ export const InteractiveCardGallery = () => {
 
           <button
             onClick={nextCard}
-            className="p-3 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-200 group"
+            className="group rounded-full bg-white/10 p-2.5 backdrop-blur-sm transition-all duration-200 hover:bg-white/20 md:p-3"
             aria-label="Next project"
           >
-            <svg className="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="h-5 w-5 text-white transition-transform group-hover:scale-110 md:h-6 md:w-6" />
           </button>
         </div>
       </div>
@@ -287,6 +358,12 @@ export const InteractiveCardGallery = () => {
           }
         }
       `}</style>
+
+      <ProjectMediaViewer
+        project={selectedProject}
+        originRect={viewerOrigin}
+        onClose={() => setSelectedProject(null)}
+      />
     </div>
   );
 };

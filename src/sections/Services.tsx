@@ -5,33 +5,33 @@ import { ScrollReveal } from '../components/animations/ScrollReveal';
 const services = [
   {
     title: 'Product Listing',
-    desc: 'Accurate and optimized product listing and cross-listing across eBay, Poshmark, Amazon, and Shopify.',
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
+    desc: 'Accurate, optimized listings across leading marketplaces.',
+    image: `${import.meta.env.BASE_URL}skills/product-listing.webp`,
   },
   {
     title: 'Product Research',
-    desc: 'Research profitable and in-demand products for your store to ensure winning items.',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+    desc: 'Clear product, competitor, and pricing insights.',
+    image: `${import.meta.env.BASE_URL}skills/product-research.webp`,
   },
   {
     title: 'SEO & Optimization',
-    desc: 'Create accurate, keyword-rich titles and descriptions to boost visibility and conversions.',
-    image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80',
+    desc: 'Search-ready titles and descriptions that improve visibility.',
+    image: `${import.meta.env.BASE_URL}skills/seo-optimization.webp`,
   },
   {
     title: 'Inventory Management',
-    desc: 'Manage inventory, monitor product availability, and ensure listings are always up to date.',
-    image: 'https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&w=800&q=80',
+    desc: 'Accurate stock, pricing, and availability updates.',
+    image: `${import.meta.env.BASE_URL}skills/inventory-orders.webp`,
   },
   {
     title: 'Order Fulfillment',
-    desc: 'Assist with daily order processing, fulfillment tasks, and comprehensive dropshipping support.',
-    image: 'https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=800&q=80',
+    desc: 'Reliable processing, tracking, and fulfillment support.',
+    image: `${import.meta.env.BASE_URL}skills/data-management.webp`,
   },
   {
     title: 'Store Management',
-    desc: 'Support your day-to-day eCommerce store operations including competitor analysis.',
-    image: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=800&q=80',
+    desc: 'Organized day-to-day support for smoother store operations.',
+    image: `${import.meta.env.BASE_URL}skills/platforms.webp`,
   },
 ];
 
@@ -75,7 +75,6 @@ const ScrollLinkedCard: React.FC<{
     <motion.div
       style={{
         position: 'absolute',
-        top: '50%',
         left: '50%',
         x: '-50%',
         y: useTransform(yOffset, val => `calc(-50% + ${val}px)`),
@@ -85,18 +84,14 @@ const ScrollLinkedCard: React.FC<{
         zIndex: index, // HIGHER index means it renders ON TOP of previous cards!
         transformOrigin: 'top center',
       }}
-      className="w-[90vw] max-w-[500px] md:max-w-3xl overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] bg-[#1a1a1a]"
+      className="absolute left-1/2 top-[58%] w-[90vw] max-w-[500px] overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:top-[60%] md:max-w-3xl"
     >
       <div className="flex aspect-[4/5] md:aspect-[16/10] w-full flex-col relative overflow-hidden h-full max-h-[70vh]">
-         {/* Blurred background image layer for smooth UI feel */}
          <img
            src={service.image}
-           className="absolute inset-0 h-full w-full object-cover scale-110"
-           style={{ filter: "blur(20px)", zIndex: 1, opacity: 0.6 }}
-         />
-         {/* Main image */}
-         <img
-           src={service.image}
+           alt=""
+           loading="lazy"
+           decoding="async"
            className="absolute inset-0 h-full w-full object-cover"
            style={{ zIndex: 2 }}
          />
@@ -105,11 +100,11 @@ const ScrollLinkedCard: React.FC<{
          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
          
          {/* Text Content Overlay */}
-         <div className="absolute bottom-0 w-full flex flex-col items-center justify-end p-6 md:p-10 text-center z-20 pb-10">
-           <h3 className="font-display font-bold text-white text-2xl md:text-4xl leading-tight mb-2 drop-shadow-lg">
+         <div className="absolute bottom-0 z-20 flex w-full flex-col items-center justify-end p-6 pb-8 text-center md:p-10 md:pb-10">
+           <h3 className="mb-2 font-display text-2xl font-bold leading-tight text-white drop-shadow-lg md:text-4xl">
              {service.title}
            </h3>
-           <p className="font-body text-white/80 text-sm md:text-lg max-w-lg line-clamp-3 md:line-clamp-none drop-shadow-md">
+           <p className="max-w-lg font-body text-sm leading-relaxed text-white/76 drop-shadow-md md:text-base">
              {service.desc}
            </p>
          </div>
@@ -148,25 +143,25 @@ export const Services: React.FC = () => {
     <section
       id="services"
       ref={sectionRef}
-      className="bg-dark relative z-10"
+      className="relative z-10 bg-[#0c0c0c]"
       style={{ height: `${services.length * 90}vh` }} // Taller container to account for the buffers
     >
-      <div className="sticky top-0 h-screen w-full flex flex-col items-center overflow-hidden">
+      <div className="sticky top-0 h-screen w-full overflow-hidden">
         
         {/* Header - Positioned naturally in the flex flow so it never overlaps the cards */}
-        <div className="w-full flex-shrink-0 pt-20 md:pt-32 pb-4 z-50 pointer-events-none">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[100] w-full pt-8 md:pt-12">
           <ScrollReveal className="text-center">
-            <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-yellow mb-2 md:mb-4 block">
+            <span className="mb-2 block font-ui text-[10px] font-semibold uppercase tracking-[0.25em] text-yellow md:mb-3 md:text-[11px]">
               How I Help
             </span>
-            <h2 className="font-serif-display text-[clamp(2.5rem,5vw,4.5rem)] font-bold text-white tracking-tight leading-none">
+            <h2 className="font-serif-display text-[clamp(2.35rem,5vw,4.5rem)] font-bold leading-none tracking-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.8)]">
               My Services
             </h2>
           </ScrollReveal>
         </div>
 
         {/* Card Stack - Takes remaining space below header */}
-        <div className="relative flex-1 w-full flex items-center justify-center">
+        <div className="relative h-full w-full">
           {services.map((service, index) => (
             <ScrollLinkedCard
               key={service.title}

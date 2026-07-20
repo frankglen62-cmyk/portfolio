@@ -66,22 +66,22 @@ export const getFieldsForElement = (id: string): FieldDef[] => {
    DEFAULTS
    ═══════════════════════════════════════════ */
 export const FALLBACK: LayoutConfig = {
-  heyTextLeft: { x: -1, y: 75, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
-  heyTextRight: { x: 42, y: 74, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  characterImage: { x: 85, y: 336, scale: 1.35, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
+  heyTextLeft: { x: 136, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
+  heyTextRight: { x: -2, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
+  characterImage: { x: 78, y: 374, scale: 1.45, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
   availableBadge: { x: -22, y: 4, scale: 1, opacity: 1, rotation: 0 },
   specializationText: { x: -10, y: 99, fontSize: '14px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.625', opacity: 1, color: '#1e1e1e', rotation: 0 },
   iAmFrankText: { x: -27, y: 28, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#1e1e1e', rotation: 0 },
   roleTitleText: { x: 0, y: 0, fontSize: 'clamp(1.2rem,3.5vw,3rem)', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: '1.05', opacity: 1, color: '#1e1e1e', rotation: 0 },
   aboutTitle: { x: 0, y: 0, fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#ffffff', rotation: 0 },
-  heyTextLeftMobile: { x: -7, y: 81, scale: 0.60, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
-  heyTextRightMobile: { x: 33, y: 82, scale: 0.60, fontSize: 'clamp(3.9rem,16.5vw,5.2rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '0.95', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  characterImageMobile: { x: -6, y: 855, scale: 3.55, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
-  availableBadgeMobile: { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0 },
-  specializationTextMobile: { x: 0, y: 0, fontSize: '9px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  iAmFrankTextMobile: { x: 0, y: 10, fontSize: 'clamp(2.65rem,12.3vw,3.85rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.84', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  roleTitleTextMobile: { x: 0, y: 8, fontSize: 'clamp(1.06rem,5.25vw,1.6rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.96', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.3rem,10.5vw,3.35rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '0.92', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  heyTextLeftMobile: { x: -31, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#24272b', rotation: 0 },
+  heyTextRightMobile: { x: 66, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#24272b', rotation: 0 },
+  characterImageMobile: { x: -6, y: 892, scale: 3.55, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
+  availableBadgeMobile: { x: -3, y: -18, scale: 1, opacity: 1, rotation: 0 },
+  specializationTextMobile: { x: 0, y: 0, fontSize: '8.5px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#20242a', rotation: 0 },
+  iAmFrankTextMobile: { x: 19, y: 15, scale: 1.35, fontSize: 'clamp(2.35rem,12vw,3.15rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.88', opacity: 1, color: '#f8f6f0', rotation: 0 },
+  roleTitleTextMobile: { x: -6, y: 21, scale: 1.1, fontSize: 'clamp(1.05rem,5.1vw,1.35rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1.02', opacity: 1, color: '#f8f6f0', rotation: 0 },
+  aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.45rem,11vw,2.75rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: '0.92', opacity: 1, color: '#1e1e1e', rotation: 0 },
 };
 
 /* ═══════════════════════════════════════════
@@ -107,7 +107,7 @@ interface VisualEditorContextProps {
   setGuides: React.Dispatch<React.SetStateAction<GuideLines>>;
   isDragging: boolean;
   setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
-  dragState: React.MutableRefObject<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; } | null>;
+  dragState: React.MutableRefObject<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>;
   scaleState: React.MutableRefObject<{ active: boolean; id: string; startY: number; origScale: number; } | null>;
   computeGuides: (dragId: string, dragCenterX: number, dragCenterY: number) => void;
   registerElementLabel: (id: string, label: string) => void;
@@ -152,7 +152,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   });
 
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const dragState = useRef<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; } | null>(null);
+  const dragState = useRef<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>(null);
   const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; } | null>(null);
 
   useEffect(() => {
@@ -233,9 +233,9 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const handlePointerMove = (e: PointerEvent) => {
       if (dragState.current?.active) {
         setIsDragging(true);
-        const { id, startX, startY, origX, origY } = dragState.current;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
+        const { id, startX, startY, origX, origY, coordinateScaleX = 1, coordinateScaleY = 1 } = dragState.current;
+        const dx = (e.clientX - startX) / coordinateScaleX;
+        const dy = (e.clientY - startY) / coordinateScaleY;
         const newX = Math.round(origX + dx);
         const newY = Math.round(origY + dy);
 

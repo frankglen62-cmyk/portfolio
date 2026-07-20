@@ -5,52 +5,52 @@ import { WordPullUp } from '../components/animations/WordPullUp';
 
 const accordionSkills = [
   {
-    label: 'Ecommerce Platforms',
+    label: 'Marketplace & Store Operations',
     sublabel: 'PLATFORMS',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Ecommerce dashboard collage with marketplace platform cards',
-    description: 'Marketplace and store admin systems used for daily ecommerce operations',
-    detailTags: ['eBay Seller Hub', 'Shopify Admin', 'Amazon Seller Central', 'Walmart Marketplace', 'Etsy Shop Manager', 'Poshmark']
+    image: `${import.meta.env.BASE_URL}skills/platforms.webp`,
+    imageAlt: 'Ecommerce operations workspace with store dashboards and parcels',
+    description: 'Day-to-day storefront support that keeps listings, orders, and channel activity organized.',
+    detailTags: ['Shopify Admin', 'eBay Seller Hub', 'Amazon Seller Central', 'Walmart Marketplace']
   },
   {
-    label: 'Product Listing',
+    label: 'Conversion-Ready Listings',
     sublabel: 'LISTING',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Product listing dashboard with ecommerce product table',
-    description: 'Clean, searchable product pages with complete item details and organized SKUs',
-    detailTags: ['Product Titles', 'Descriptions', 'Bullet Points', 'Categories', 'Item Specifics', 'Variations', 'SKU Organization']
+    image: `${import.meta.env.BASE_URL}skills/product-listing.webp`,
+    imageAlt: 'Product photography and listing production workspace',
+    description: 'Complete, customer-friendly product pages with polished copy, imagery, and accurate attributes.',
+    detailTags: ['Titles & Bullets', 'Descriptions', 'Item Specifics', 'Variations', 'SKU Structure']
   },
   {
-    label: 'SEO & Optimization',
-    sublabel: 'SEARCH',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Ecommerce SEO analytics and marketplace optimization dashboard',
-    description: 'Keyword-led listing improvements for stronger marketplace search visibility',
-    detailTags: ['Keyword Research', 'SEO Titles', 'Search Descriptions', 'eBay Item Specifics', 'Amazon Bullets', 'Shopify Meta Tags']
+    label: 'Marketplace SEO',
+    sublabel: 'VISIBILITY',
+    image: `${import.meta.env.BASE_URL}skills/seo-optimization.webp`,
+    imageAlt: 'Marketplace SEO analytics and optimized product page',
+    description: 'Intent-led optimization that improves relevance, discoverability, and listing clarity.',
+    detailTags: ['Keyword Research', 'SEO Titles', 'Search Copy', 'Meta Data', 'Listing Audits']
   },
   {
-    label: 'Product Research',
+    label: 'Product & Competitor Research',
     sublabel: 'RESEARCH',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Ecommerce research dashboard with charts and product insights',
-    description: 'Demand, competitor, pricing, and supplier research for smarter listing decisions',
-    detailTags: ['Demand Research', 'Competitor Analysis', 'Pricing Research', 'Supplier Research', 'Trend Checking', 'Profitable Products']
+    image: `${import.meta.env.BASE_URL}skills/product-research.webp`,
+    imageAlt: 'Product samples beside a competitor research dashboard',
+    description: 'Structured market research for smarter product selection, positioning, and pricing decisions.',
+    detailTags: ['Demand Signals', 'Competitor Analysis', 'Pricing', 'Supplier Checks', 'Trend Review']
   },
   {
-    label: 'Inventory & Orders',
-    sublabel: 'MANAGEMENT',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Inventory and order management dashboard for ecommerce stores',
-    description: 'Reliable stock, order, fulfillment, tracking, and returns support',
-    detailTags: ['Inventory Monitoring', 'Stock Updates', 'Price Adjustments', 'Order Processing', 'Tracking Updates', 'Returns']
+    label: 'Inventory & Order Support',
+    sublabel: 'OPERATIONS',
+    image: `${import.meta.env.BASE_URL}skills/inventory-orders.webp`,
+    imageAlt: 'Inventory station with parcels, scanner, and order dashboard',
+    description: 'Accurate stock and fulfillment support from order intake through tracking and returns.',
+    detailTags: ['Stock Monitoring', 'Order Processing', 'Tracking Updates', 'Fulfillment', 'Returns']
   },
   {
-    label: 'Data Management',
+    label: 'Ecommerce Data Systems',
     sublabel: 'DATA',
-    image: '/ecommerce-skills-dashboard.png',
-    imageAlt: 'Ecommerce data management dashboard with CSV and spreadsheet widgets',
-    description: 'Spreadsheet, CSV, and reporting workflows that keep store data tidy',
-    detailTags: ['Microsoft Excel', 'Google Sheets', 'CSV Imports', 'CSV Exports', 'Bulk Updates', 'Reports']
+    image: `${import.meta.env.BASE_URL}skills/data-management.webp`,
+    imageAlt: 'Ecommerce spreadsheet and reporting data workspace',
+    description: 'Clean spreadsheet and catalog workflows that make store data dependable and easy to maintain.',
+    detailTags: ['Excel', 'Google Sheets', 'CSV Import & Export', 'Bulk Updates', 'Reporting']
   }
 ];
 
@@ -58,11 +58,11 @@ export const Skills: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="skills" ref={sectionRef} className="py-20 md:py-28 relative overflow-hidden" style={{ backgroundColor: '#f9f9f9', color: '#1a1a1a' }}>
+    <section id="skills" ref={sectionRef} className="relative overflow-hidden bg-[#d8dbdf] py-14 text-[#1a1a1a] md:py-28">
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12">
         
         {/* Header */}
-        <ScrollReveal className="mb-8 text-center">
+        <ScrollReveal className="mb-5 text-center md:mb-8">
           <span className="font-body text-[13px] font-medium text-dark/45 mb-3 block">
             E-Commerce Expertise
           </span>
@@ -77,7 +77,7 @@ export const Skills: React.FC = () => {
           <div className="w-12 h-[2px] bg-yellow mt-4 mx-auto" />
         </ScrollReveal>
 
-        <ScrollReveal className="w-full mt-6">
+        <ScrollReveal className="mt-3 w-full md:mt-6">
           <HoverExpand 
             items={accordionSkills} 
             collapsedHeight={74} 

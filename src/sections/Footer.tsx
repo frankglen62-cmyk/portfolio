@@ -1,66 +1,73 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Camera, Play, Send } from 'lucide-react';
 import { ScrollReveal } from '../components/animations/ScrollReveal';
+
+const navigation = [
+  ['Home', '#home'],
+  ['About', '#about'],
+  ['Services', '#services'],
+  ['My Project', '#portfolio'],
+  ['Skills', '#skills'],
+  ['Contact', '#contact'],
+];
+
+const expertise = ['Product Listings', 'Marketplace SEO', 'Store Operations'];
+
+const socials = [
+  ['Instagram', 'https://www.instagram.com/fnkgln/?hl=en', Camera],
+  ['TikTok', 'https://www.tiktok.com/@itzyearl', Send],
+  ['YouTube', 'https://www.youtube.com/@TunogTriviaPH', Play],
+] as const;
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="footer" className="text-dark py-6 relative overflow-hidden border-t border-dark/5" style={{ background: 'linear-gradient(180deg, #ecedef 0%, #e2e4e8 100%)' }}>
-      <ScrollReveal className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Brand */}
+    <footer id="footer" className="relative overflow-hidden border-t border-white/8 bg-black py-12 text-white md:py-16">
+      <ScrollReveal className="mx-auto max-w-6xl px-6 md:px-10">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.8fr_0.9fr] md:gap-16">
           <div>
-            <h3 className="font-heading text-2xl font-bold mb-3 text-dark">Frank Glen Martin</h3>
-            <p className="text-sm text-dark/60 leading-relaxed max-w-xs font-body">
-              Freelance Virtual Assistant helping businesses stay organized, efficient, and scalable.
+            <a href="#home" className="font-serif-display text-3xl font-semibold leading-none tracking-normal text-white">
+              Frank.
+            </a>
+            <p className="mt-4 max-w-xs font-body text-sm leading-relaxed text-white/46">
+              Ecommerce virtual assistance for organized, conversion-ready stores.
             </p>
+            <div className="mt-6 flex gap-4">
+              {socials.map(([name, href, Icon]) => (
+                <a key={name} href={href} target="_blank" rel="noreferrer" className="text-white/48 transition-colors hover:text-white" aria-label={name} title={name}>
+                  <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="font-ui text-[10px] font-bold uppercase tracking-[0.3em] text-dark/40 mb-4">Quick Links</h4>
-            <nav className="flex flex-col gap-2">
-              {['About', 'Services', 'My Project', 'Skills', 'Contact'].map((link) => (
-                <a
-                  key={link}
-                  href={`#${link.toLowerCase()}`}
-                  className="text-sm text-dark/70 hover:text-yellow transition-colors font-body"
-                >
-                  {link}
+          <div className="border-t border-white/24 pt-4">
+            <h3 className="mb-4 font-ui text-[11px] font-semibold uppercase tracking-[0.22em] text-white/78">Navigate</h3>
+            <nav className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-1">
+              {navigation.map(([label, href]) => (
+                <a key={label} href={href} className="font-body text-sm text-white/48 transition-colors hover:text-white">
+                  {label}
                 </a>
               ))}
             </nav>
           </div>
 
-          {/* CTA */}
-          <div>
-            <h4 className="font-ui text-[10px] font-bold uppercase tracking-[0.3em] text-dark/40 mb-4">Work With Me</h4>
-            <p className="text-sm text-dark/60 leading-relaxed mb-4 font-body">
-              Ready to take your business to the next level? Let's connect.
-            </p>
-            <motion.a
-              href="#contact"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 bg-dark text-white font-ui font-bold text-[10px] uppercase tracking-wider rounded-full px-6 py-3 cursor-pointer hover:bg-black transition-colors"
-            >
-              Get Started
-            </motion.a>
+          <div className="border-t border-white/24 pt-4">
+            <h3 className="mb-4 font-ui text-[11px] font-semibold uppercase tracking-[0.22em] text-white/78">Expertise</h3>
+            <ul className="space-y-2">
+              {expertise.map((item) => (
+                <li key={item} className="font-body text-sm text-white/48">{item}</li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-dark/10 pt-5 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-dark/40 font-ui">
-            © {currentYear} Frank Glen Martin. All rights reserved.
-          </p>
-          <p className="text-xs text-dark/30 font-ui">
-            Designed with ❤️
-          </p>
+        <div className="mt-12 flex flex-col gap-2 border-t border-white/20 pt-5 font-body text-xs text-white/36 sm:flex-row sm:items-center sm:justify-between">
+          <p>© {currentYear} Frank Glen Martin. All rights reserved.</p>
+          <p>Ecommerce Virtual Assistant · Philippines</p>
         </div>
       </ScrollReveal>
     </footer>
   );
 };
-

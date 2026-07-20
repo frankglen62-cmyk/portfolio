@@ -7,9 +7,15 @@ interface EditableElementProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  responsivePosition?: boolean;
 }
 
-export const EditableElement: React.FC<EditableElementProps> = ({ id, label, children, className, style }) => {
+const DESKTOP_REFERENCE_WIDTH = 1920;
+const DESKTOP_REFERENCE_HEIGHT = 919;
+const MOBILE_REFERENCE_WIDTH = 372;
+const MOBILE_REFERENCE_HEIGHT = 832;
+
+export const EditableElement: React.FC<EditableElementProps> = ({ id, label, children, className, style, responsivePosition = false }) => {
   const [isMobileViewport, setIsMobileViewport] = React.useState(() => (
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   ));
@@ -25,9 +31,21 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
   const isSelected = editMode && selectedElement === activeId;
   const hasScale = 'scale' in config;
   const hasMobileConfig = Boolean(layout[mobileId]);
+  const isCharacterImage = id === 'characterImage';
+  const elementScale = config.scale ?? 1;
+  const selectionUiScale = 1 / elementScale;
+  const referenceWidth = isMobileViewport ? MOBILE_REFERENCE_WIDTH : DESKTOP_REFERENCE_WIDTH;
+  const referenceHeight = isMobileViewport ? MOBILE_REFERENCE_HEIGHT : DESKTOP_REFERENCE_HEIGHT;
+  const useResponsiveOffsets = responsivePosition;
+  const xOffset = useResponsiveOffsets
+    ? `${((config.x || 0) / referenceWidth) * 100}vw`
+    : `${config.x || 0}px`;
+  const yOffset = useResponsiveOffsets
+    ? `${((config.y || 0) / referenceHeight) * 100}svh`
+    : `${config.y || 0}px`;
   const transformStyle = {
-    '--editable-x': `${config.x || 0}px`,
-    '--editable-y': `${config.y || 0}px`,
+    '--editable-x': xOffset,
+    '--editable-y': yOffset,
     '--editable-rotation': `${config.rotation || 0}deg`,
     '--editable-scale': `${config.scale ?? 1}`,
     '--editable-opacity': `${config.opacity ?? 1}`,
@@ -62,6 +80,8 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
       startY: e.clientY,
       origX: config.x || 0,
       origY: config.y || 0,
+      coordinateScaleX: useResponsiveOffsets ? window.innerWidth / referenceWidth : 1,
+      coordinateScaleY: useResponsiveOffsets ? window.innerHeight / referenceHeight : 1,
     };
   };
 
@@ -94,7 +114,7 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
         ...transformStyle,
         transform: 'translate(var(--editable-x), var(--editable-y)) rotate(var(--editable-rotation)) scale(var(--editable-scale))',
         cursor: editMode ? (isDragging ? 'grabbing' : 'grab') : undefined,
-        outline: isSelected ? '2px solid #fdb466' : editMode ? '1px dashed rgba(253,180,102,0.25)' : 'none',
+        outline: isSelected && !isCharacterImage ? '2px solid #fdb466' : 'none',
         outlineOffset: '6px',
         touchAction: editMode ? 'none' : 'auto',
         pointerEvents: editMode ? 'auto' : style?.pointerEvents,
@@ -119,11 +139,11 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
               onPointerDown={handleScalePointerDown}
               style={{
                 position: 'absolute',
-                ...pos,
-                width: '14px', height: '14px',
+                ...Object.fromEntries(Object.entries(pos).map(([key, value]) => [key, `${Number.parseFloat(value) * selectionUiScale}px`])),
+                width: `${14 * selectionUiScale}px`, height: `${14 * selectionUiScale}px`,
                 background: '#fdb466',
-                border: '2px solid white',
-                borderRadius: '3px',
+                border: `${2 * selectionUiScale}px solid white`,
+                borderRadius: `${3 * selectionUiScale}px`,
                 cursor: 'nwse-resize',
                 zIndex: 200,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
@@ -133,7 +153,8 @@ export const EditableElement: React.FC<EditableElementProps> = ({ id, label, chi
 
           {/* ─── Combined Position & Scale label ─── */}
           <div style={{
-            position: 'absolute', top: '-28px', left: '50%', transform: 'translateX(-50%)',
+            position: 'absolute', top: `${-28 * selectionUiScale}px`, left: '50%', transform: `translateX(-50%) scale(${selectionUiScale})`,
+            transformOrigin: 'bottom center',
             background: '#fdb466', color: '#1e1e1e', borderRadius: '4px',
             padding: '2px 8px', fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap',
             boxShadow: '0 2px 6px rgba(0,0,0,0.2)',

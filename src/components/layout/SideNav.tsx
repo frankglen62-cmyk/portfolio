@@ -11,14 +11,18 @@ const navItems = [
   { id: 'contact', label: 'CONTACT', num: '06' },
 ];
 
-export const SideNav: React.FC = () => {
+interface SideNavProps {
+  isVisible: boolean;
+}
+
+export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
   const [activeSection, setActiveSection] = useState<string>('home');
-  const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(() => (
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   ));
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const scrollAnimationRef = useRef<number | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia('(max-width: 809px)');
@@ -26,28 +30,6 @@ export const SideNav: React.FC = () => {
 
     query.addEventListener('change', sync);
     return () => query.removeEventListener('change', sync);
-  }, []);
-
-  // Scroll visibility logic: Show only from Services section down to the bottom
-  useEffect(() => {
-    const handleScroll = () => {
-      const servicesSection = document.getElementById('services');
-      if (servicesSection) {
-        // Trigger visibility when scrolling near the Services section
-        if (window.scrollY >= servicesSection.offsetTop - window.innerHeight * 0.6) {
-          setIsVisible(true);
-        } else {
-          setIsVisible(false);
-        }
-      } else {
-        // Fallback
-        setIsVisible(window.scrollY > window.innerHeight * 0.8);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -96,20 +78,52 @@ export const SideNav: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => () => {
+    if (scrollAnimationRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationRef.current);
+    }
+    document.documentElement.style.scrollBehavior = '';
+  }, []);
+
+  const scrollToPosition = (targetY: number) => {
+    if (scrollAnimationRef.current !== null) {
+      window.cancelAnimationFrame(scrollAnimationRef.current);
+    }
+
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+    const duration = 650;
+    const startTime = performance.now();
+    document.documentElement.style.scrollBehavior = 'auto';
+
+    const step = (time: number) => {
+      const progress = Math.min((time - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      window.scrollTo(0, startY + distance * eased);
+
+      if (progress < 1) {
+        scrollAnimationRef.current = window.requestAnimationFrame(step);
+      } else {
+        scrollAnimationRef.current = null;
+        document.documentElement.style.scrollBehavior = '';
+      }
+    };
+
+    scrollAnimationRef.current = window.requestAnimationFrame(step);
+  };
+
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     if (id === 'home') {
-      // Force scroll to absolute top for Intro
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToPosition(0);
       setActiveSection('home');
       return;
     }
     
     const element = document.getElementById(id);
     if (element) {
-      // Calculate exact position to scroll perfectly
       const y = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: y, behavior: 'smooth' });
+      scrollToPosition(y);
       setActiveSection(id);
     }
   };

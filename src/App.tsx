@@ -15,6 +15,7 @@ import { Skills } from './sections/Skills';
 import { WhyHireMe } from './sections/WhyHireMe';
 import { Contact } from './sections/Contact';
 import { Footer } from './sections/Footer';
+import { useHeroIntro } from './hooks/useHeroIntro';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -35,6 +36,7 @@ const App: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { editMode, isDragging, setSelectedElement } = useVisualEditor();
+  const isHeroIntro = useHeroIntro();
 
   return (
     <div
@@ -46,8 +48,8 @@ const AppContent: React.FC = () => {
       }}
     >
       <VisualEditorPanel />
-      <Navbar />
-      <SideNav />
+      <Navbar isVisible={isHeroIntro} />
+      <SideNav isVisible={!isHeroIntro} />
       <main>
         <Hero isLoaded={true} />
         <Services />

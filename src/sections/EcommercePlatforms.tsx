@@ -18,7 +18,7 @@ export const EcommercePlatforms: React.FC = () => {
   const marqueeItems = [...platforms, ...platforms, ...platforms, ...platforms];
 
   return (
-    <section id="ecommerce-platforms" ref={sectionRef} className="overflow-hidden" style={{ background: '#d8dbdf' }}>
+    <section id="ecommerce-platforms" ref={sectionRef} className="overflow-hidden bg-[#d8dbdf]">
       <div className="relative z-10 w-full mx-auto">
 
         {/* Infinite Marquee Section */}
@@ -49,7 +49,7 @@ export const EcommercePlatforms: React.FC = () => {
               >
                 <div className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-all duration-500">
                   <CustomIcon 
-                    src={`/icons/ecommerce/${platform.id}`} 
+                    src={`${import.meta.env.BASE_URL}icons/ecommerce/${platform.id}`}
                     alt={platform.name} 
                     className="w-full h-full object-contain transition-all duration-500 group-hover:scale-110 drop-shadow-sm grayscale group-hover:grayscale-0"
                   />

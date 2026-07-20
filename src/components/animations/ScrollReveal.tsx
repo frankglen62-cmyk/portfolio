@@ -50,7 +50,7 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     <motion.div
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: false, amount }}
+      viewport={{ once: true, amount }}
       variants={variants}
       className={className}
     >

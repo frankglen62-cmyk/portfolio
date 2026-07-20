@@ -33,6 +33,9 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
   const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const containerH = useRef<number>(750);
   const isVisible = useRef<boolean>(true);
+  const [allowVideoLoad, setAllowVideoLoad] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 810px)').matches : true
+  ));
 
   // Click-to-advance: uses speed boost instead of lerp so the natural
   // smoothstep/magnetic-dwell animation plays at accelerated speed
@@ -70,7 +73,10 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { isVisible.current = entry.isIntersecting; },
+      ([entry]) => {
+        isVisible.current = entry.isIntersecting;
+        if (entry.isIntersecting) setAllowVideoLoad(true);
+      },
       { threshold: 0.05 }
     );
     observer.observe(el);
@@ -270,7 +276,7 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
                 const isFrontFace = layerIdx === thicknessLayers.length - 1;
                 const isBackFace = layerIdx === 0;
                 const videoSrc = CARD_VIDEOS[i % CARD_VIDEOS.length];
-                const shouldLoadVideo = visibleCards.has(i);
+                const shouldLoadVideo = allowVideoLoad && visibleCards.has(i);
 
                 if (!isFrontFace && !isBackFace) {
                   return (
@@ -297,6 +303,7 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
                       {shouldLoadVideo && (
                         <video
                           src={videoSrc}
+                          preload="metadata"
                           autoPlay loop muted playsInline
                           className="absolute inset-0 w-full h-full object-cover rounded-[16px]"
                         />
@@ -321,7 +328,7 @@ export const ToolsCarousel3D: React.FC<ToolsCarousel3DProps> = ({ categories }) 
                               >
                                 {tool.id && (
                                   <img
-                                    src={`/icons/tools/${tool.id}`}
+                                    src={`${import.meta.env.BASE_URL}icons/tools/${tool.id}`}
                                     alt={tool.name}
                                     className="w-5 h-5 sm:w-6 sm:h-6 object-contain"
                                     loading="lazy"

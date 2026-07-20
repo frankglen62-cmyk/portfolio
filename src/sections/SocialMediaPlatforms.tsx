@@ -19,7 +19,7 @@ export const SocialMediaPlatforms: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="social-platforms" ref={sectionRef} className="pt-28 md:pt-40 pb-12 md:pb-16 overflow-hidden" style={{ background: 'linear-gradient(180deg, #d8dbdf 0%, #e2e4e8 50%, #ecedef 100%)' }}>
+    <section id="social-platforms" ref={sectionRef} className="overflow-hidden bg-[#d8dbdf] pb-12 pt-28 md:pb-16 md:pt-40">
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
         {/* Section Header */}
         <ScrollReveal className="text-center mb-16 md:mb-20">
@@ -51,7 +51,7 @@ export const SocialMediaPlatforms: React.FC = () => {
               className={`flex flex-col items-center gap-4 group ${platform.url ? 'cursor-pointer' : 'cursor-default'}`}
             >
               <div className="w-20 h-20 md:w-[88px] md:h-[88px] flex items-center justify-center transition-all duration-300">
-                <CustomIcon src={`/icons/social/${platform.id}`} alt={platform.name} className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125" />
+                <CustomIcon src={`${import.meta.env.BASE_URL}icons/social/${platform.id}`} alt={platform.name} className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125" />
               </div>
               <span className="font-ui text-[11px] font-semibold uppercase tracking-wider text-dark/50 transition-colors group-hover:text-dark">
                 {platform.name}
