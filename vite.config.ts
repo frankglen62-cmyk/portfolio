@@ -62,7 +62,7 @@ function layoutConfigPlugin(): Plugin {
 }
 
 export default defineConfig({
-  base: '/portfolio/',
+  base: process.env.NETLIFY ? '/' : '/portfolio/',
   plugins: [
     react(),
     tailwindcss(),
