@@ -58,11 +58,11 @@ export const Skills: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="skills" ref={sectionRef} className="relative overflow-hidden bg-[#d8dbdf] py-14 text-[#1a1a1a] md:py-28">
+    <section id="skills" ref={sectionRef} className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-[#d8dbdf] py-6 text-[#1a1a1a] shadow-[0_-32px_0_#d8dbdf] sm:py-10 md:block md:min-h-0 md:py-28 md:shadow-[0_-20px_50px_rgba(0,0,0,0.08)]">
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12">
         
         {/* Header */}
-        <ScrollReveal className="mb-5 text-center md:mb-8">
+        <ScrollReveal className="mb-3 text-center sm:mb-5 md:mb-8">
           <span className="font-body text-[13px] font-medium text-dark/45 mb-3 block">
             E-Commerce Expertise
           </span>

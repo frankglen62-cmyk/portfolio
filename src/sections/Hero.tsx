@@ -35,52 +35,6 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
     return () => query.removeEventListener('change', sync);
   }, []);
 
-  useEffect(() => {
-    let previousViewportHeight = window.innerHeight;
-    let resizeTimer = 0;
-    let pendingProgress: number | null = null;
-
-    const preserveHeroScrollProgress = () => {
-      if (!sceneRef.current) return;
-
-      const heroTop = sceneRef.current.offsetTop;
-      const currentScroll = window.scrollY;
-      const progress = (currentScroll - heroTop) / previousViewportHeight;
-      const firstAboutItem = aboutRef.current?.querySelector<HTMLElement>('.about-scroll-in');
-      const aboutIsVisible = firstAboutItem
-        ? Number.parseFloat(window.getComputedStyle(firstAboutItem).opacity) > 0.65
-        : false;
-
-      if (aboutIsVisible) {
-        pendingProgress = 1;
-      } else if (progress >= 0 && progress <= 1.02) {
-        pendingProgress = Math.min(1, progress);
-      }
-
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
-        ScrollTrigger.refresh();
-
-        if (pendingProgress !== null && sceneRef.current) {
-          window.scrollTo({
-            top: sceneRef.current.offsetTop + (pendingProgress * window.innerHeight),
-            behavior: 'auto',
-          });
-          ScrollTrigger.update();
-        }
-
-        previousViewportHeight = window.innerHeight;
-        pendingProgress = null;
-      }, 160);
-    };
-
-    window.addEventListener('resize', preserveHeroScrollProgress);
-    return () => {
-      window.removeEventListener('resize', preserveHeroScrollProgress);
-      window.clearTimeout(resizeTimer);
-    };
-  }, []);
-
   useLayoutEffect(() => {
     if (!configLoaded || !sceneRef.current || !portraitRef.current || !portraitPoseRef.current || !aboutRef.current) return;
 

@@ -6,7 +6,7 @@ const navItems = [
   { id: 'about', label: 'BACKGROUND', num: '01' },
   { id: 'services', label: 'SERVICES', num: '02' },
   { id: 'skills', label: 'SKILLS', num: '03' },
-  { id: 'ecommerce-platforms', label: 'ECOMMERCE', num: '04' },
+  { id: 'tools', label: 'TOOLS', num: '04' },
   { id: 'portfolio', label: 'MY PROJECT', num: '05' },
   { id: 'contact', label: 'CONTACT', num: '06' },
 ];

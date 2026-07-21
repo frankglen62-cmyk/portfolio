@@ -39,27 +39,40 @@ export function HoverExpand({
 }: HoverExpandProps) {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
   const [canHover, setCanHover] = React.useState(false);
-  const compactRowHeight = Math.min(collapsedHeight, 66);
-  const compactExpandedHeight = Math.min(expandedHeight, 292);
+  const [viewportHeight, setViewportHeight] = React.useState(() => (
+    typeof window === "undefined" ? 900 : window.innerHeight
+  ));
+  const shortTouchViewport = !canHover && viewportHeight < 720;
+  const compactRowHeight = Math.min(collapsedHeight, shortTouchViewport ? 52 : 60);
+  const compactExpandedHeight = Math.min(expandedHeight, shortTouchViewport ? 224 : 258);
 
   React.useEffect(() => {
-    const media = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const media = window.matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)");
     const update = () => setCanHover(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
 
+  React.useEffect(() => {
+    let frame = 0;
+    const updateHeight = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => setViewportHeight(window.innerHeight));
+    };
+
+    window.addEventListener("resize", updateHeight, { passive: true });
+    return () => {
+      window.removeEventListener("resize", updateHeight);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   const rowHeight = canHover ? collapsedHeight : compactRowHeight;
   const openHeight = canHover ? expandedHeight : compactExpandedHeight;
   const revealOffset = Math.max(0, (openHeight - rowHeight) / 2);
-  const closedTotalHeight = items.length * rowHeight;
   const openTotalHeight = openHeight + (items.length - 1) * rowHeight;
-  const totalHeight = canHover
-    ? openTotalHeight
-    : activeIndex === null
-      ? closedTotalHeight
-      : openTotalHeight;
+  const totalHeight = openTotalHeight;
 
   return (
     <motion.div
@@ -75,23 +88,20 @@ export function HoverExpand({
         const splitActiveTop = activeIndex === null
           ? 0
           : Math.max(0, Math.min(activeIndex * rowHeight, totalHeight - openHeight));
-        const itemTop = canHover
-          ? activeIndex === null
-            ? revealOffset + i * rowHeight
-            : i < activeIndex
-              ? splitActiveTop - (activeIndex - i) * rowHeight
-              : i > activeIndex
-                ? splitActiveTop + openHeight + (i - activeIndex - 1) * rowHeight
-                : splitActiveTop
-          : activeIndex !== null && i > activeIndex
-            ? i * rowHeight + (openHeight - rowHeight)
-            : i * rowHeight;
+        const itemTop = activeIndex === null
+          ? revealOffset + i * rowHeight
+          : i < activeIndex
+            ? splitActiveTop - (activeIndex - i) * rowHeight
+            : i > activeIndex
+              ? splitActiveTop + openHeight + (i - activeIndex - 1) * rowHeight
+              : splitActiveTop;
 
         return (
-          <motion.div
+          <motion.button
             key={item.label}
+            type="button"
             className={cn(
-              "absolute left-0 w-full overflow-hidden border-t border-current/15 outline-none",
+              "absolute left-0 w-full overflow-hidden border-t border-current/15 text-left outline-none",
               i === items.length - 1 && "border-b",
             )}
             style={{ height: isActive ? openHeight : rowHeight }}
@@ -117,14 +127,6 @@ export function HoverExpand({
             }}
             onMouseEnter={() => canHover && setActiveIndex(i)}
             onClick={() => setActiveIndex((current) => current === i ? null : i)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setActiveIndex((current) => current === i ? null : i);
-              }
-            }}
-            tabIndex={0}
-            role="button"
             aria-expanded={isActive}
           >
             <motion.div
@@ -133,10 +135,12 @@ export function HoverExpand({
               animate={{
                 opacity: isActive ? 1 : 0,
                 scale: isActive ? 1 : 1.04,
+                clipPath: isActive ? "inset(0% 0 0%)" : "inset(48% 0 48%)",
               }}
               transition={{
                 opacity: { duration: 0.42, ease: [0.23, 1, 0.32, 1] },
                 scale: { duration: 0.65, ease: [0.23, 1, 0.32, 1] },
+                clipPath: { duration: 0.58, ease: [0.23, 1, 0.32, 1] },
               }}
             >
               <img
@@ -245,7 +249,7 @@ export function HoverExpand({
                 ))}
               </motion.div>
             )}
-          </motion.div>
+          </motion.button>
         );
       })}
     </motion.div>
