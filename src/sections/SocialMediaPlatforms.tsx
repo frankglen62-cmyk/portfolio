@@ -37,18 +37,21 @@ export const SocialMediaPlatforms: React.FC = () => {
           staggerChildren={0.06}
           className="grid grid-cols-2 sm:grid-cols-4 gap-10 max-w-3xl mx-auto"
         >
-          {platforms.map((platform) => (
-            <motion.a
+          {platforms.map((platform) => {
+            const PlatformItem = platform.url ? motion.a : motion.div;
+
+            return (
+            <PlatformItem
               key={platform.name}
-              href={platform.url || '#'}
-              target={platform.url ? '_blank' : '_self'}
-              rel="noreferrer"
+              {...(platform.url
+                ? { href: platform.url, target: '_blank', rel: 'noreferrer' }
+                : { 'aria-label': `${platform.name} profile coming soon` })}
               variants={{
                 hidden: { opacity: 0, scale: 0.5, y: 50 },
                 visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', bounce: 0.5, duration: 0.8 } },
               }}
               whileHover={{ y: -8, scale: 1.08 }}
-              className={`flex flex-col items-center gap-4 group ${platform.url ? 'cursor-pointer' : 'cursor-default'}`}
+              className={`group flex flex-col items-center gap-4 ${platform.url ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
             >
               <div className="w-20 h-20 md:w-[88px] md:h-[88px] flex items-center justify-center transition-all duration-300">
                 <CustomIcon src={`${import.meta.env.BASE_URL}icons/social/${platform.id}`} alt={platform.name} className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125" />
@@ -56,8 +59,9 @@ export const SocialMediaPlatforms: React.FC = () => {
               <span className="font-ui text-[11px] font-semibold uppercase tracking-wider text-dark/50 transition-colors group-hover:text-dark">
                 {platform.name}
               </span>
-            </motion.a>
-          ))}
+            </PlatformItem>
+            );
+          })}
         </ScrollReveal>
       </div>
     </section>

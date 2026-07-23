@@ -23,7 +23,7 @@ export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="footer" className="relative overflow-hidden border-t border-white/8 bg-black py-12 text-white md:py-16">
+    <footer id="footer" className="mobile-safe-footer relative overflow-hidden border-t border-white/8 bg-black pt-12 pb-28 text-white md:py-16">
       <ScrollReveal className="mx-auto max-w-6xl px-6 md:px-10">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.8fr_0.9fr] md:gap-16">
           <div>
@@ -35,7 +35,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="mt-6 flex gap-4">
               {socials.map(([name, href, Icon]) => (
-                <a key={name} href={href} target="_blank" rel="noreferrer" className="text-white/48 transition-colors hover:text-white" aria-label={name} title={name}>
+                <a key={name} href={href} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/48 transition-colors hover:border-white/25 hover:text-white" aria-label={name} title={name}>
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
                 </a>
               ))}

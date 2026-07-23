@@ -22,7 +22,6 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
   ));
   const observerRef = useRef<IntersectionObserver | null>(null);
-  const scrollAnimationRef = useRef<number | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia('(max-width: 809px)');
@@ -78,38 +77,8 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => () => {
-    if (scrollAnimationRef.current !== null) {
-      window.cancelAnimationFrame(scrollAnimationRef.current);
-    }
-    document.documentElement.style.scrollBehavior = '';
-  }, []);
-
   const scrollToPosition = (targetY: number) => {
-    if (scrollAnimationRef.current !== null) {
-      window.cancelAnimationFrame(scrollAnimationRef.current);
-    }
-
-    const startY = window.scrollY;
-    const distance = targetY - startY;
-    const duration = 650;
-    const startTime = performance.now();
-    document.documentElement.style.scrollBehavior = 'auto';
-
-    const step = (time: number) => {
-      const progress = Math.min((time - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      window.scrollTo(0, startY + distance * eased);
-
-      if (progress < 1) {
-        scrollAnimationRef.current = window.requestAnimationFrame(step);
-      } else {
-        scrollAnimationRef.current = null;
-        document.documentElement.style.scrollBehavior = '';
-      }
-    };
-
-    scrollAnimationRef.current = window.requestAnimationFrame(step);
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
   };
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
@@ -136,13 +105,15 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -20, scale: 0.95 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 md:bottom-auto md:left-8 md:top-1/2 md:-translate-x-0 md:-translate-y-1/2"
+          className="mobile-side-nav fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 md:bottom-auto md:left-8 md:top-1/2 md:-translate-x-0 md:-translate-y-1/2"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           <motion.div 
             layout
-            className="relative flex flex-row items-center gap-1 px-3 py-2 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden md:flex-col md:items-stretch md:gap-0 md:px-3 md:py-6"
+            className="relative flex flex-row items-center gap-1 px-3 py-2 max-[360px]:gap-0 max-[360px]:px-2 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden md:flex-col md:items-stretch md:gap-0 md:px-3 md:py-6"
+            role="navigation"
+            aria-label="Section navigation"
             animate={{
               width: isMobile ? 'auto' : isHovered ? [44, 280, 220] : 44,
               borderRadius: isMobile ? 999 : isHovered ? [30, 140, 30] : 30,
@@ -161,7 +132,9 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
                   key={item.id}
                   href={`#${item.id}`}
                   onClick={(e) => handleClick(e, item.id)}
-                  className="group relative flex h-9 w-8 items-center justify-center z-10 outline-none md:h-auto md:w-full md:justify-start md:py-2 md:my-[2px]"
+                  aria-label={`Go to ${item.label.toLowerCase()}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className="group relative z-10 flex h-10 w-9 items-center justify-center outline-none max-[360px]:w-8 md:my-[2px] md:h-auto md:w-full md:justify-start md:py-2"
                 >
                   {/* Subtle Active Pill Background (Reference Style) */}
                   <motion.div

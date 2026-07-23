@@ -167,6 +167,7 @@ export const VisualEditorPanel: React.FC = () => {
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => { setEditMode(false); setPanelOpen(false); setSelectedElement(null); }} 
                 className="text-gray-400 hover:text-gray-800 transition"
+                aria-label="Close visual editor"
               >
                 <CloseIcon />
               </button>
@@ -252,6 +253,7 @@ export const VisualEditorPanel: React.FC = () => {
               backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', color: 'white',
             }}
             title="Drag to move, click to edit"
+            aria-label="Open visual editor"
           >
             <GearIcon />
           </button>

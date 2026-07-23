@@ -190,42 +190,22 @@
       text-align: left !important;
     }
 
-    .hero-specialization-wrap [data-editable-id="specializationText"] {
-      display: block;
-      padding: 8px 9px;
-      border: 1px solid rgba(30, 30, 30, 0.08);
-      border-radius: 12px;
-      background: rgba(247, 248, 249, 0.84);
-      box-shadow: 0 8px 24px rgba(12, 18, 28, 0.12);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
     .hero-specialization-copy {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      align-items: flex-end;
+      gap: 3px;
+      color: #ffffff;
+      text-align: right;
+      text-shadow: 0 2px 12px rgba(4, 8, 16, 0.76), 0 1px 2px rgba(4, 8, 16, 0.92);
     }
 
     .hero-specialization-copy strong {
-      font-weight: 700;
-      margin-bottom: 1px;
-    }
-
-    .hero-specialization-float {
-      animation: mobile-specialization-float 3.4s ease-in-out infinite;
-      will-change: transform;
-    }
-
-    @keyframes mobile-specialization-float {
-      0%, 100% { transform: translate3d(0, 0, 0); }
-      50% { transform: translate3d(0, -7px, 0); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .hero-specialization-float {
-        animation: none;
-      }
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+      text-transform: uppercase;
     }
 
     .hero-bottom-fade {
@@ -331,6 +311,141 @@
     }
   }
 
+  @media (max-width: 599px) {
+    .hero-identity-wrap [data-editable-id="iAmFrankText"] {
+      --editable-x: 0px !important;
+      --editable-y: 0px !important;
+      --editable-scale: 1.15 !important;
+    }
+
+    .hero-role-wrap [data-editable-id="roleTitleText"] {
+      --editable-x: 0px !important;
+      --editable-y: 0px !important;
+      --editable-scale: 0.95 !important;
+    }
+
+    .hero-identity-wrap {
+      left: 4% !important;
+    }
+
+    .hero-role-wrap {
+      right: 4% !important;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .hero-identity-wrap,
+    .hero-role-wrap {
+      bottom: 7svh !important;
+    }
+
+    .hero-identity-wrap [data-editable-id="iAmFrankText"] {
+      --editable-scale: 1.05 !important;
+    }
+
+    .hero-role-wrap [data-editable-id="roleTitleText"] {
+      --editable-scale: 0.85 !important;
+    }
+
+    .hero-identity-title {
+      font-size: clamp(2.05rem, 11vw, 2.45rem) !important;
+    }
+
+    .hero-role-title {
+      font-size: clamp(0.9rem, 4.75vw, 1.1rem) !important;
+    }
+  }
+
+  @media (min-width: 600px) and (max-width: 809px) {
+    .hero-portrait [data-editable-id="characterImage"] {
+      --editable-y: 35svh !important;
+      transform:
+        translate(var(--editable-x), var(--editable-y))
+        rotate(var(--editable-rotation))
+        scale(2.05) !important;
+    }
+  }
+
+  .hero-specialization-copy {
+    display: flex;
+    min-width: 178px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    font-family: var(--font-body);
+    text-align: right;
+  }
+
+  .hero-specialization-copy strong {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .hero-ticker-window {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 1.35em;
+    overflow: hidden;
+  }
+
+  .hero-ticker-word {
+    position: absolute;
+    inset: 0 0 auto;
+    display: block;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.25;
+    white-space: nowrap;
+    will-change: transform, filter, opacity;
+  }
+
+  @media (max-width: 809px) {
+    .hero-specialization-copy-mobile {
+      min-width: 118px;
+      color: #ffffff;
+    }
+
+    .hero-specialization-copy-mobile strong {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .hero-specialization-copy-mobile .hero-ticker-word {
+      font-size: 11px;
+      font-weight: 700;
+    }
+  }
+
+  .hero-availability-dot {
+    background: #22c55e;
+    box-shadow:
+      0 0 0 4px rgba(34, 197, 94, 0.13),
+      0 0 13px 4px rgba(34, 197, 94, 0.72);
+    animation: availability-glow 1.8s ease-in-out infinite;
+  }
+
+  @keyframes availability-glow {
+    0%, 100% {
+      box-shadow:
+        0 0 0 3px rgba(34, 197, 94, 0.11),
+        0 0 9px 3px rgba(34, 197, 94, 0.58);
+    }
+    50% {
+      box-shadow:
+        0 0 0 5px rgba(34, 197, 94, 0.16),
+        0 0 17px 6px rgba(34, 197, 94, 0.86);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-availability-dot {
+      animation: none;
+    }
+  }
+
   ::selection {
     background-color: var(--color-yellow);
     color: var(--color-dark);
@@ -351,6 +466,17 @@
    Utility Classes — Prolific Aesthetic
    ============================================================ */
 @layer utilities {
+  @media (max-width: 809px) {
+    .mobile-side-nav {
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+      max-width: calc(100vw - 1.5rem);
+    }
+
+    .mobile-safe-footer {
+      padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+    }
+  }
+
   .glass-nav {
     background: rgba(226, 228, 232, 0.88);
     backdrop-filter: blur(20px);

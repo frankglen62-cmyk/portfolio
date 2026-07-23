@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useVisualEditor } from '../contexts/VisualEditorContext';
 import { EditableElement } from '../components/editor/EditableElement';
 import { WordPullUp } from '../components/animations/WordPullUp';
+import { BlurredTextTicker } from '../components/ui/blurred-text-ticker';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -274,10 +275,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: isMobileViewport ? 0.45 : 0.6, delay: isMobileViewport ? 0.28 : 0.8 }}
-              className="flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-5 py-3 rounded-full border border-dark/5 shadow-sm origin-left"
+              className="hero-availability-badge flex items-center gap-2.5 bg-white/50 backdrop-blur-sm px-5 py-3 rounded-full border border-dark/5 shadow-sm origin-left"
               style={{ opacity: getLayout('availableBadge')?.opacity }}
             >
-              <span className="w-2.5 h-2.5 rounded-full bg-orange shrink-0" />
+              <span className="hero-availability-dot w-2.5 h-2.5 rounded-full shrink-0" />
               <span className="font-body font-medium text-[13px] text-dark">
                 {isMobileViewport ? 'Available for opportunities' : 'Available for new opportunities'}
               </span>
@@ -289,29 +290,23 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           className={`hero-scroll-out hero-specialization-wrap absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] ${editMode ? 'z-[80]' : 'z-30'} max-w-[200px] text-right hidden md:block`}
         >
           <EditableElement id="specializationText" responsivePosition>
-            <div className="hero-specialization-float">
-              {isMobileViewport ? (
-                <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.32, ease }}
-                  className="hero-specialization-copy font-body"
-                  style={{
-                    fontSize: getLayout('specializationText')?.fontSize,
-                    fontWeight: getLayout('specializationText')?.fontWeight,
-                    letterSpacing: getLayout('specializationText')?.letterSpacing,
-                    lineHeight: getLayout('specializationText')?.lineHeight,
-                    color: getLayout('specializationText')?.color,
-                  }}
-                >
-                  <strong>E-commerce support</strong>
-                  <span>Listings - SEO - Research</span>
-                  <span>Store management</span>
-                </motion.p>
-              ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: isMobileViewport ? 0.32 : 0.75, ease }}
+              style={{
+                fontSize: getLayout('specializationText')?.fontSize,
+                fontWeight: getLayout('specializationText')?.fontWeight,
+                letterSpacing: getLayout('specializationText')?.letterSpacing,
+                lineHeight: getLayout('specializationText')?.lineHeight,
+                color: getLayout('specializationText')?.color,
+              }}
+            >
+              <BlurredTextTicker isMobile={isMobileViewport} />
+              {editMode && !isMobileViewport && (
                 <WordPullUp
-                  words="Specialized in E-commerce, Product Listing, Store Management, and Virtual Assistance."
-                  className="font-body leading-relaxed"
+                  words="Ecommerce support"
+                  className="sr-only"
                   style={{
                     fontSize: getLayout('specializationText')?.fontSize, fontWeight: getLayout('specializationText')?.fontWeight,
                     letterSpacing: getLayout('specializationText')?.letterSpacing, lineHeight: getLayout('specializationText')?.lineHeight,
@@ -327,7 +322,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
                   }}
                 />
               )}
-            </div>
+            </motion.div>
           </EditableElement>
         </div>
 

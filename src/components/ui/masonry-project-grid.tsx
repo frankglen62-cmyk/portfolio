@@ -1,116 +1,91 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
-
-type ProjectMedia = {
-  id: string;
-  title: string;
-  category: string;
-  src: string;
-  alt: string;
-  type: 'image' | 'video';
-  aspectClass: string;
-  objectPosition?: string;
-};
+import { Film, Image as ImageIcon, Play } from 'lucide-react';
+import {
+  ProjectMediaViewer,
+  type ProjectViewerData,
+} from './project-media-viewer';
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
-const projects: ProjectMedia[] = [
-  {
-    id: 'marketplace-dashboard',
-    title: 'Multi-Marketplace Operations Dashboard',
-    category: 'Store Operations',
-    src: asset('ecommerce-skills-dashboard.png'),
-    alt: 'Ecommerce marketplace operations dashboard for eBay, Shopify, Amazon, Walmart, and Etsy',
-    type: 'image',
-    aspectClass: 'aspect-[1.18/1]',
-  },
-  {
-    id: 'marketplace-workflow',
-    title: 'Marketplace Operations Workflow',
-    category: 'Project Walkthrough',
-    src: asset('projects/marketplace-operations/project-video-01.mp4'),
-    alt: 'Portrait video walkthrough of a marketplace operations project',
-    type: 'video',
-    aspectClass: 'aspect-[9/14]',
-  },
-  {
-    id: 'conversion-listings',
-    title: 'Conversion-Ready Product Listings',
-    category: 'Product Listing',
-    src: asset('skills/product-listing.webp'),
-    alt: 'Product photography and listing optimization workspace',
-    type: 'image',
-    aspectClass: 'aspect-[4/5]',
-    objectPosition: '60% center',
-  },
-  {
-    id: 'marketplace-seo',
-    title: 'Marketplace SEO Optimization',
-    category: 'Search Growth',
-    src: asset('skills/seo-optimization.webp'),
-    alt: 'Marketplace search optimization and ecommerce analytics dashboard',
-    type: 'image',
-    aspectClass: 'aspect-[1.22/1]',
-    objectPosition: '63% center',
-  },
-  {
-    id: 'product-research',
-    title: 'Product and Competitor Research',
-    category: 'Research',
-    src: asset('skills/product-research.webp'),
-    alt: 'Product research workspace with competitor analytics and market data',
-    type: 'image',
-    aspectClass: 'aspect-[4/5]',
-    objectPosition: '58% center',
-  },
-  {
-    id: 'store-platforms',
-    title: 'Store Platform Management',
-    category: 'Marketplace Support',
-    src: asset('skills/platforms.webp'),
-    alt: 'Ecommerce platform management workspace with store dashboards and order parcels',
-    type: 'image',
-    aspectClass: 'aspect-[1.1/1]',
-    objectPosition: '64% center',
-  },
-  {
-    id: 'inventory-orders',
-    title: 'Inventory and Order Workflow',
-    category: 'Fulfillment',
-    src: asset('skills/inventory-orders.webp'),
-    alt: 'Inventory and order management workspace with parcels and stock dashboard',
-    type: 'image',
-    aspectClass: 'aspect-[4/5]',
-    objectPosition: '68% center',
-  },
-  {
-    id: 'data-management',
-    title: 'Ecommerce Data Management',
-    category: 'Catalog Data',
-    src: asset('skills/data-management.webp'),
-    alt: 'Ecommerce spreadsheet and catalog data management workspace',
-    type: 'image',
-    aspectClass: 'aspect-[1.18/1]',
-    objectPosition: '62% center',
-  },
+const ugcShowcase: ProjectViewerData = {
+  id: 1,
+  title: 'UGC Ad Creative Showcase',
+  category: 'Ecommerce Ad Portfolio',
+  description:
+    'A curated collection of short-form UGC ad creatives produced for ecommerce products.',
+  image: asset('projects/marketplace-operations/project-video-01.mp4'),
+  gradient: 'from-white/10 to-black',
+  media: [
+    {
+      id: 'ugc-ad-01',
+      type: 'video',
+      src: asset('projects/marketplace-operations/project-video-01.mp4'),
+      alt: 'UGC ecommerce beauty product ad creative 1',
+      label: 'Beauty UGC',
+      orientation: 'portrait',
+    },
+    {
+      id: 'ugc-ad-02',
+      type: 'video',
+      src: asset('projects/ugc-ads/ugc-ad-02.mp4'),
+      alt: 'UGC ecommerce product ad creative 2',
+      label: 'Product Demo',
+      orientation: 'portrait',
+    },
+    {
+      id: 'ugc-ad-03',
+      type: 'video',
+      src: asset('projects/ugc-ads/ugc-ad-03.mp4'),
+      alt: 'UGC ecommerce product ad creative 3',
+      label: 'Creative Cut 03',
+      orientation: 'portrait',
+    },
+    {
+      id: 'ugc-ad-04',
+      type: 'video',
+      src: asset('projects/ugc-ads/ugc-ad-04.mp4'),
+      alt: 'UGC ecommerce product ad creative 4',
+      label: 'Creative Cut 04',
+      orientation: 'portrait',
+    },
+    {
+      id: 'ugc-ad-05',
+      type: 'video',
+      src: asset('projects/ugc-ads/ugc-ad-05.mp4'),
+      alt: 'UGC ecommerce product ad creative 5',
+      label: 'Creative Cut 05',
+      orientation: 'portrait',
+    },
+  ],
+};
+
+const placeholders = [
+  { id: 2, aspect: 'aspect-[1.18/1]' },
+  { id: 3, aspect: 'aspect-[4/5]' },
+  { id: 4, aspect: 'aspect-[1.22/1]' },
+  { id: 5, aspect: 'aspect-[4/5]' },
+  { id: 6, aspect: 'aspect-[1.1/1]' },
+  { id: 7, aspect: 'aspect-[4/5]' },
+  { id: 8, aspect: 'aspect-[1.18/1]' },
 ];
 
-// A fixed shuffled order keeps the Framer-style random reveal consistent
-// across React's development and production render cycles.
-const revealOrder = [2, 6, 0, 4, 1, 7, 3, 5];
+const revealOrder = [1, 5, 0, 6, 2, 4, 3, 7];
 
 export function MasonryProjectGrid() {
   const gridRef = useRef<HTMLDivElement>(null);
-  const [hasEntered, setHasEntered] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<ProjectMedia | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const [hasEntered, setHasEntered] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  const [previewReady, setPreviewReady] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectViewerData | null>(null);
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setHasEntered(true);
       return;
     }
 
@@ -129,136 +104,133 @@ export function MasonryProjectGrid() {
   }, []);
 
   useEffect(() => {
-    if (!selectedProject) return;
+    const video = previewVideoRef.current;
+    if (!video) return;
 
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedProject(null);
+    const attemptPlay = () => {
+      video.muted = true;
+      video.play().catch(() => undefined);
     };
 
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKeyDown);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) attemptPlay();
+        else video.pause();
+      },
+      { rootMargin: '180px 0px', threshold: 0.08 },
+    );
+
+    const handleVisibility = () => {
+      if (!document.hidden) attemptPlay();
+    };
+
+    observer.observe(video);
+    document.addEventListener('visibilitychange', handleVisibility);
+    video.addEventListener('canplay', attemptPlay);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener('keydown', handleKeyDown);
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      video.removeEventListener('canplay', attemptPlay);
     };
-  }, [selectedProject]);
+  }, []);
+
+  const revealStyle = (index: number): React.CSSProperties => ({
+    opacity: hasEntered ? 1 : 0,
+    transform: hasEntered ? 'translateY(0)' : 'translateY(20px)',
+    animation: hasEntered
+      ? `project-masonry-appear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${(revealOrder[index] / revealOrder.length).toFixed(3)}s both`
+      : undefined,
+  });
 
   return (
     <>
       <div
         ref={gridRef}
-        className="project-masonry columns-1 gap-[5px] sm:columns-2 lg:columns-3"
-        aria-label="Selected ecommerce projects"
+        className="project-masonry columns-1 gap-5 sm:columns-2 sm:gap-6 lg:columns-3"
+        aria-label="Selected ecommerce creative projects"
       >
-        {projects.map((project, index) => (
-          <button
-            key={project.id}
-            type="button"
-            className={`project-masonry-item group relative mb-[5px] block w-full break-inside-avoid overflow-hidden rounded-lg bg-[#171717] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black ${project.aspectClass}`}
-            style={{
-              opacity: hasEntered ? 1 : 0,
-              transform: hasEntered ? 'translateY(0)' : 'translateY(20px)',
-              animation: hasEntered
-                ? `project-masonry-appear 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${(revealOrder[index] / projects.length).toFixed(3)}s both`
-                : undefined,
+        <button
+          type="button"
+          className="project-masonry-item group relative mb-5 block aspect-[9/14] w-full break-inside-avoid overflow-hidden rounded-xl border border-white/[0.08] bg-[#090909] text-left shadow-[0_18px_50px_rgba(0,0,0,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black sm:mb-6"
+          style={revealStyle(0)}
+          onClick={(event) => {
+            setOriginRect(event.currentTarget.getBoundingClientRect());
+            setSelectedProject(ugcShowcase);
+          }}
+          aria-label="Open UGC Ad Creative Showcase"
+        >
+          <video
+            ref={previewVideoRef}
+            src={ugcShowcase.media[0].src}
+            muted
+            autoPlay
+            playsInline
+            preload="auto"
+            onLoadedMetadata={(event) => {
+              if (event.currentTarget.currentTime < 0.8) {
+                event.currentTarget.currentTime = 0.8;
+              }
             }}
-            onClick={() => setSelectedProject(project)}
-            aria-label={`Open ${project.title}`}
-          >
-            {project.type === 'video' ? (
-              <video
-                src={project.src}
-                muted
-                autoPlay
-                loop
-                playsInline
-                preload="metadata"
-                aria-label={project.alt}
-                className="h-full w-full scale-100 object-cover transition-transform duration-[400ms] ease-in-out will-change-transform group-hover:scale-105 group-focus-visible:scale-105"
-              />
-            ) : (
-              <img
-                src={project.src}
-                alt={project.alt}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full scale-100 object-cover transition-transform duration-[400ms] ease-in-out will-change-transform group-hover:scale-105 group-focus-visible:scale-105"
-                style={{ objectPosition: project.objectPosition }}
-              />
-            )}
-
-            <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent px-4 pb-4 pt-14 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 max-md:opacity-100">
-              <span className="block font-ui text-[9px] font-semibold uppercase tracking-[0.2em] text-white/65">
-                {project.category}
-              </span>
-              <span className="mt-1 block font-heading text-lg font-semibold leading-tight text-white sm:text-xl">
-                {project.title}
-              </span>
+            onLoadedData={() => setPreviewReady(true)}
+            onPlaying={() => setPreviewReady(true)}
+            onEnded={(event) => {
+              event.currentTarget.currentTime = 0.8;
+              event.currentTarget.play().catch(() => undefined);
+            }}
+            className={`h-full w-full object-cover transition-all duration-500 ease-out group-hover:scale-[1.035] ${
+              previewReady ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(255,255,255,0.09),transparent_48%)]" />
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/5 to-black/10" />
+          <span className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-black/35 text-white backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
+            <Play className="ml-0.5 h-4 w-4 fill-current" />
+          </span>
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-5 pt-20">
+            <span className="mb-2 flex items-center gap-2 font-ui text-[9px] font-semibold uppercase tracking-[0.2em] text-white/58">
+              <Film className="h-3.5 w-3.5" />
+              5 video creatives
             </span>
-          </button>
+            <span className="block max-w-[15ch] font-heading text-2xl font-semibold leading-[1.05] text-white sm:text-3xl">
+              UGC Ad Creative Showcase
+            </span>
+            <span className="mt-2 block max-w-[28ch] font-body text-xs leading-relaxed text-white/62">
+              Short-form ecommerce ads made to stop the scroll.
+            </span>
+          </span>
+        </button>
+
+        {placeholders.map((placeholder, index) => (
+          <article
+            key={placeholder.id}
+            className={`project-masonry-item group relative mb-5 flex w-full break-inside-avoid items-center justify-center overflow-hidden rounded-xl border border-white/[0.08] bg-[#050505] shadow-[0_18px_50px_rgba(0,0,0,0.22)] sm:mb-6 ${placeholder.aspect}`}
+            style={revealStyle(index + 1)}
+            aria-label={`Project image placeholder ${placeholder.id}`}
+          >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,0.035),transparent_58%)]" />
+            <div className="relative flex flex-col items-center text-center">
+              <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/24">
+                <ImageIcon className="h-4 w-4" />
+              </span>
+              <span className="font-ui text-[8px] font-semibold uppercase tracking-[0.24em] text-white/24">
+                Project holder {String(placeholder.id).padStart(2, '0')}
+              </span>
+              <span className="mt-1 font-body text-[10px] text-white/16">New work coming soon</span>
+            </div>
+          </article>
         ))}
       </div>
 
-      <AnimatePresence>
-        {selectedProject && (
-          <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md sm:p-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            role="dialog"
-            aria-modal="true"
-            aria-label={selectedProject.title}
-            onClick={() => setSelectedProject(null)}
-          >
-            <button
-              type="button"
-              onClick={() => setSelectedProject(null)}
-              className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-8 sm:top-8"
-              aria-label="Close project viewer"
-            >
-              <X className="h-6 w-6" aria-hidden="true" />
-            </button>
-
-            <motion.figure
-              className="flex max-h-[90vh] max-w-[90vw] flex-col items-center"
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              {selectedProject.type === 'video' ? (
-                <video
-                  src={selectedProject.src}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
-                  aria-label={selectedProject.alt}
-                />
-              ) : (
-                <img
-                  src={selectedProject.src}
-                  alt={selectedProject.alt}
-                  className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
-                />
-              )}
-              <figcaption className="mt-4 text-center text-white">
-                <span className="block font-ui text-[9px] font-semibold uppercase tracking-[0.22em] text-white/55">
-                  {selectedProject.category}
-                </span>
-                <span className="mt-1 block font-heading text-xl font-semibold sm:text-2xl">
-                  {selectedProject.title}
-                </span>
-              </figcaption>
-            </motion.figure>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ProjectMediaViewer
+        key={selectedProject?.id ?? 'closed'}
+        project={selectedProject}
+        originRect={originRect}
+        onClose={() => {
+          setSelectedProject(null);
+          setOriginRect(null);
+        }}
+      />
 
       <style>{`
         @keyframes project-masonry-appear {
@@ -273,8 +245,7 @@ export function MasonryProjectGrid() {
             transform: none !important;
           }
 
-          .project-masonry-item > img,
-          .project-masonry-item > video {
+          .project-masonry-item video {
             transition: none !important;
           }
         }

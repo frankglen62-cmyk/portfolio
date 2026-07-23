@@ -63,6 +63,10 @@ function layoutConfigPlugin(): Plugin {
 
 export default defineConfig({
   base: process.env.NETLIFY ? '/' : '/portfolio/',
+  optimizeDeps: {
+    // Keep Vite from scanning the unrelated archived app stored in this repo.
+    entries: ['index.html'],
+  },
   plugins: [
     react(),
     tailwindcss(),

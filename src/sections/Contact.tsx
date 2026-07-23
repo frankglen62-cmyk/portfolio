@@ -111,33 +111,43 @@ export const Contact: React.FC = () => {
           </h2>
 
           <form className="relative z-10 flex flex-col gap-3" onSubmit={handleSubmit}>
+            <label htmlFor="contact-name" className="sr-only">Your name</label>
             <input
+              id="contact-name"
               name="name"
               type="text"
               required
+              autoComplete="name"
               placeholder="Name *"
-              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-sm text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22"
+              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-base text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22 sm:text-sm"
             />
+            <label htmlFor="contact-email" className="sr-only">Your email address</label>
             <input
+              id="contact-email"
               name="email"
               type="email"
               required
+              autoComplete="email"
               placeholder="Email *"
-              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-sm text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22"
+              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-base text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22 sm:text-sm"
             />
+            <label htmlFor="contact-subject" className="sr-only">Message subject</label>
             <input
+              id="contact-subject"
               name="subject"
               type="text"
               required
               placeholder="Your Subject *"
-              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-sm text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22"
+              className="h-12 w-full rounded-md border border-white/5 bg-white/[0.045] px-4 font-body text-base text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22 sm:text-sm"
             />
+            <label htmlFor="contact-message" className="sr-only">Your message</label>
             <textarea
+              id="contact-message"
               name="message"
               rows={5}
               required
               placeholder="Your Message *"
-              className="w-full resize-none rounded-md border border-white/5 bg-white/[0.045] px-4 py-4 font-body text-sm text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22"
+              className="w-full resize-none rounded-md border border-white/5 bg-white/[0.045] px-4 py-4 font-body text-base text-white outline-none transition-colors placeholder:text-white/32 focus:border-white/22 sm:text-sm"
             />
             <motion.button
               whileHover={{ y: -1 }}

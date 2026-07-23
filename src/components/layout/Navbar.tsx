@@ -17,8 +17,27 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!isVisible) setMobileOpen(false);
+    if (isVisible) return;
+    const timer = window.setTimeout(() => setMobileOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [isVisible]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mobileOpen]);
 
   return (
     <>
@@ -29,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
         }`}
       >
-        <div className="w-full px-6 md:px-12 lg:px-16 flex items-center justify-between">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-6 md:px-10 lg:px-12">
           <a
             href="#home"
             className="font-heading italic text-2xl md:text-[26px] text-dark"
@@ -42,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
               <a
                 key={link.label}
                 href={link.href}
-                className="font-body text-[14px] font-medium text-dark/70 hover:text-dark transition-colors duration-300"
+                className="py-2 font-body text-[14px] font-medium text-dark/70 transition-colors duration-300 hover:text-dark"
               >
                 {link.label}
               </a>
@@ -62,7 +81,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 focus:outline-none"
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
           >
             <motion.span
               animate={mobileOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
@@ -84,13 +105,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
       <AnimatePresence>
         {mobileOpen && isVisible && (
           <motion.div
+            id="mobile-navigation"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-40 bg-dark pt-24 px-8 flex flex-col justify-between pb-10"
           >
-            <nav className="flex flex-col gap-2 mt-8">
+            <nav className="flex flex-col gap-2 mt-8" aria-label="Mobile navigation">
               {navLinks.map((link, i) => (
                 <motion.a
                   key={link.label}

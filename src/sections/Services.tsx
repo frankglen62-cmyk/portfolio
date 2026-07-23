@@ -6,32 +6,44 @@ const services = [
   {
     title: 'Product Listing',
     desc: 'Accurate, optimized listings across leading marketplaces.',
-    image: `${import.meta.env.BASE_URL}skills/product-listing.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/product-listing-2026.png`,
+    alt: 'Ecommerce virtual assistant building an optimized product listing at a modern workstation',
+    objectPosition: '52% center',
   },
   {
     title: 'Product Research',
     desc: 'Clear product, competitor, and pricing insights.',
-    image: `${import.meta.env.BASE_URL}skills/product-research.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/product-research-2026.png`,
+    alt: 'Product samples and modern competitor research dashboards',
+    objectPosition: '50% center',
   },
   {
     title: 'SEO & Optimization',
     desc: 'Search-ready titles and descriptions that improve visibility.',
-    image: `${import.meta.env.BASE_URL}skills/seo-optimization.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/seo-optimization-2026.png`,
+    alt: 'Ecommerce SEO specialist reviewing keyword and search performance',
+    objectPosition: '50% center',
   },
   {
     title: 'Inventory Management',
     desc: 'Accurate stock, pricing, and availability updates.',
-    image: `${import.meta.env.BASE_URL}skills/inventory-orders.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/inventory-management-2026.png`,
+    alt: 'Inventory professional scanning ecommerce stock in an organized storeroom',
+    objectPosition: '51% center',
   },
   {
     title: 'Order Fulfillment',
     desc: 'Reliable processing, tracking, and fulfillment support.',
-    image: `${import.meta.env.BASE_URL}skills/data-management.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/order-fulfillment-2026.png`,
+    alt: 'Hands preparing and labeling an ecommerce order for shipment',
+    objectPosition: '50% center',
   },
   {
     title: 'Store Management',
     desc: 'Organized day-to-day support for smoother store operations.',
-    image: `${import.meta.env.BASE_URL}skills/platforms.webp`,
+    image: `${import.meta.env.BASE_URL}services-2026/store-management-2026.png`,
+    alt: 'Unified ecommerce store management dashboard with parcels and product samples',
+    objectPosition: '50% center',
   },
 ];
 
@@ -89,15 +101,15 @@ const ScrollLinkedCard: React.FC<{
       <div className="flex aspect-[4/5] md:aspect-[16/10] w-full flex-col relative overflow-hidden h-full max-h-[70vh]">
          <img
            src={service.image}
-           alt=""
+           alt={service.alt}
            loading="lazy"
            decoding="async"
            className="absolute inset-0 h-full w-full object-cover"
-           style={{ zIndex: 2 }}
+           style={{ zIndex: 2, objectPosition: service.objectPosition }}
          />
          
          {/* Dark overlay at bottom for text */}
-         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
+         <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/92 via-black/24 to-transparent" />
          
          {/* Text Content Overlay */}
          <div className="absolute bottom-0 z-20 flex w-full flex-col items-center justify-end p-6 pb-8 text-center md:p-10 md:pb-10">

@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Pause, Play, Video, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from 'lucide-react';
 
 export interface ProjectMedia {
   id: string;
   type: 'video' | 'image';
   src: string;
   alt: string;
+  label?: string;
   orientation: 'portrait' | 'landscape';
 }
 
@@ -27,19 +28,24 @@ interface ProjectMediaViewerProps {
   onClose: () => void;
 }
 
-export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({ project, originRect, onClose }) => {
+export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
+  project,
+  onClose,
+}) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const activeIndexRef = useRef(0);
   const closeTimerRef = useRef<number | null>(null);
   const closingRef = useRef(false);
+  const swipeStartXRef = useRef<number | null>(null);
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
 
   const requestClose = React.useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
     setIsClosing(true);
-    closeTimerRef.current = window.setTimeout(onClose, 560);
+    closeTimerRef.current = window.setTimeout(onClose, 430);
   }, [onClose]);
 
   useEffect(() => () => {
@@ -48,20 +54,20 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({ project,
 
   useEffect(() => {
     if (!project) return;
-    setActiveIndex(0);
-    setIsPlaying(false);
-    setIsClosing(false);
-    closingRef.current = false;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') requestClose();
       if (event.key === 'ArrowLeft') {
-        setActiveIndex((current) => (current - 1 + project.media.length) % project.media.length);
+        const next = (activeIndexRef.current - 1 + project.media.length) % project.media.length;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       }
       if (event.key === 'ArrowRight') {
-        setActiveIndex((current) => (current + 1) % project.media.length);
+        const next = (activeIndexRef.current + 1) % project.media.length;
+        activeIndexRef.current = next;
+        setActiveIndex(next);
       }
     };
 
@@ -73,23 +79,51 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({ project,
   }, [project, requestClose]);
 
   useEffect(() => {
-    setIsPlaying(false);
-    videoRef.current?.pause();
-  }, [activeIndex]);
+    if (!project) return;
+
+    videoRefs.current.forEach((video, index) => {
+      if (!video) return;
+      if (index === activeIndex) {
+        video.muted = true;
+        video.preload = 'auto';
+
+        const startPlayback = () => {
+          if (video.readyState >= 1) video.currentTime = 0;
+          video.play().catch(() => undefined);
+        };
+
+        if (video.readyState >= 2) {
+          startPlayback();
+        } else {
+          video.addEventListener('canplay', startPlayback, { once: true });
+          video.load();
+        }
+      } else {
+        video.pause();
+        video.muted = true;
+        const rawDistance = Math.abs(index - activeIndex);
+        const carouselDistance = Math.min(rawDistance, project.media.length - rawDistance);
+        video.preload = carouselDistance <= 1 ? 'auto' : 'metadata';
+      }
+    });
+  }, [activeIndex, project]);
+
+  useEffect(() => {
+    const activeVideo = videoRefs.current[activeIndex];
+    if (activeVideo) activeVideo.muted = isMuted;
+  }, [activeIndex, isMuted]);
 
   if (typeof document === 'undefined') return null;
-
-  const activeMedia = project?.media[activeIndex];
 
   const getTargetSize = (media: ProjectMedia) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const horizontalInset = viewportWidth < 640 ? 24 : 128;
-    const availableWidth = viewportWidth - horizontalInset;
-    const availableHeight = Math.min(viewportHeight * 0.72, viewportHeight - 170);
+    const isMobile = viewportWidth < 640;
+    const availableWidth = viewportWidth - (isMobile ? 64 : 280);
+    const availableHeight = viewportHeight - (isMobile ? 76 : 34);
 
     if (media.orientation === 'portrait') {
-      let height = availableHeight;
+      let height = Math.max(300, availableHeight);
       let width = height * 9 / 16;
       if (width > availableWidth) {
         width = availableWidth;
@@ -98,7 +132,7 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({ project,
       return { width, height };
     }
 
-    let width = Math.min(availableWidth, 1152);
+    let width = Math.min(availableWidth, 1180);
     let height = width * 10 / 16;
     if (height > availableHeight) {
       height = availableHeight;
@@ -107,228 +141,228 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({ project,
     return { width, height };
   };
 
-  const targetSize = activeMedia ? getTargetSize(activeMedia) : { width: 0, height: 0 };
+  const targetSize = project
+    ? getTargetSize(project.media[activeIndex])
+    : { width: 0, height: 0 };
+  const isMobile = window.innerWidth < 640;
 
-  const getOriginTransform = () => {
-    if (!activeMedia || !originRect) {
-      return { x: 0, y: 0, scaleX: 0.88, scaleY: 0.88 };
-    }
-
-    const viewportHeight = window.innerHeight;
-    const targetCenterY = 68 + (viewportHeight - 68 - 82) / 2;
-    const targetCenterX = window.innerWidth / 2;
-
-    return {
-      x: originRect.left + originRect.width / 2 - targetCenterX,
-      y: originRect.top + originRect.height / 2 - targetCenterY,
-      scaleX: originRect.width / targetSize.width,
-      scaleY: originRect.height / targetSize.height,
-    };
-  };
-
-  const origin = getOriginTransform();
-
-  const selectMedia = (index: number) => {
-    setActiveIndex(index);
+  const getRelativePosition = (index: number) => {
+    if (!project) return 0;
+    let difference = index - activeIndex;
+    const midpoint = project.media.length / 2;
+    if (difference > midpoint) difference -= project.media.length;
+    if (difference < -midpoint) difference += project.media.length;
+    return difference;
   };
 
   const showPrevious = () => {
     if (!project) return;
-    selectMedia((activeIndex - 1 + project.media.length) % project.media.length);
+    const next = (activeIndexRef.current - 1 + project.media.length) % project.media.length;
+    activeIndexRef.current = next;
+    setActiveIndex(next);
   };
 
   const showNext = () => {
     if (!project) return;
-    selectMedia((activeIndex + 1) % project.media.length);
+    const next = (activeIndexRef.current + 1) % project.media.length;
+    activeIndexRef.current = next;
+    setActiveIndex(next);
   };
 
-  const togglePlayback = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      await video.play();
-      setIsPlaying(true);
-    } else {
-      video.pause();
-      setIsPlaying(false);
+  const goToIndex = (index: number) => {
+    activeIndexRef.current = index;
+    setActiveIndex(index);
+  };
+
+  const handleSwipeStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse') return;
+    swipeStartXRef.current = event.clientX;
+  };
+
+  const handleSwipeEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    const startX = swipeStartXRef.current;
+    swipeStartXRef.current = null;
+    if (startX === null) return;
+
+    const distance = event.clientX - startX;
+    if (Math.abs(distance) < 44) return;
+    if (distance > 0) showPrevious();
+    else showNext();
+  };
+
+  const getCardMotion = (relativePosition: number) => {
+    const absolutePosition = Math.abs(relativePosition);
+    const direction = relativePosition < 0 ? -1 : 1;
+
+    if (relativePosition === 0) {
+      return {
+        x: 0,
+        scale: 1,
+        opacity: isClosing ? 0 : 1,
+        filter: 'blur(0px)',
+        rotateY: 0,
+      };
     }
+
+    if (absolutePosition === 1) {
+      return {
+        x: direction * targetSize.width * (isMobile ? 0.5 : 0.62),
+        scale: isMobile ? 0.78 : 0.84,
+        opacity: isClosing ? 0 : isMobile ? 0.9 : 0.94,
+        filter: 'blur(0.8px)',
+        rotateY: direction * -2,
+      };
+    }
+
+    return {
+      x: direction * targetSize.width * (isMobile ? 0.68 : 0.9),
+      scale: isMobile ? 0.64 : 0.7,
+      opacity: isClosing ? 0 : isMobile ? 0.34 : 0.48,
+      filter: 'blur(3px)',
+      rotateY: direction * -4,
+    };
   };
 
   return createPortal(
     <AnimatePresence>
-      {project && activeMedia && (
+      {project && (
         <motion.div
-          className="fixed inset-0 z-[300] flex flex-col overflow-hidden bg-black/94 text-white backdrop-blur-xl"
+          className="fixed inset-0 z-[10000] overflow-hidden bg-[#080a0c] text-white"
           initial={{ opacity: 0 }}
-          animate={{ opacity: isClosing ? 0.35 : 1 }}
+          animate={{ opacity: isClosing ? 0 : 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.28 }}
+          transition={{ duration: 0.24 }}
           role="dialog"
           aria-modal="true"
-          aria-label={`${project.title} project gallery`}
+          aria-label={`${project.title} video carousel`}
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3 sm:px-7 sm:py-4">
-            <div className="min-w-0">
-              <p className="mb-1 font-ui text-[9px] font-semibold uppercase tracking-[0.18em] text-white/38">
-                {project.category} · {String(project.id).padStart(2, '0')}
-              </p>
-              <h2 className="truncate font-body text-base font-semibold tracking-normal text-white sm:text-xl">
-                {project.title}
-              </h2>
-            </div>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.065),transparent_58%)]" />
+
+          <button
+            type="button"
+            onClick={requestClose}
+            className="absolute right-4 top-4 z-[80] flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-black/36 text-white/80 backdrop-blur-md transition-all hover:rotate-90 hover:bg-white hover:text-black sm:right-7 sm:top-6 sm:h-11 sm:w-11"
+            aria-label="Close video carousel"
+            title="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <div className="absolute inset-0 flex items-center justify-center px-8 sm:px-[140px]">
             <button
               type="button"
-              onClick={requestClose}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white/80 transition-colors hover:bg-white hover:text-black"
-              aria-label="Close project gallery"
-              title="Close"
+              onClick={showPrevious}
+              className="absolute left-3 z-[70] flex h-11 w-11 items-center justify-center rounded-full border border-white/18 bg-black/38 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:text-black sm:left-8 sm:h-12 sm:w-12"
+              aria-label="Previous video"
+              title="Previous"
             >
-              <X className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
-          </div>
 
-          <div className="relative flex min-h-0 flex-1 items-center justify-center px-3 py-4 sm:px-16 sm:py-6">
-            {project.media.length > 1 && (
-              <button
-                type="button"
-                onClick={showPrevious}
-                className="absolute left-3 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/10 text-white/84 backdrop-blur-md transition-colors hover:bg-white hover:text-black sm:flex"
-                aria-label="Previous media"
-                title="Previous"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-            )}
-
-            <motion.div
-              layout
-              data-project-media-frame
-              className="relative flex max-h-full max-w-full items-center justify-center overflow-hidden rounded-lg border border-white/12 bg-[#111] shadow-[0_28px_90px_rgba(0,0,0,0.65)]"
-              style={{ width: targetSize.width, height: targetSize.height }}
-              initial={{
-                x: origin.x,
-                y: origin.y,
-                scaleX: origin.scaleX,
-                scaleY: origin.scaleY,
-                borderRadius: 16,
-                opacity: 1,
+            <div
+              className="relative"
+              style={{
+                width: targetSize.width,
+                height: targetSize.height,
+                touchAction: 'pan-y',
+                perspective: 1200,
               }}
-              animate={isClosing ? {
-                x: origin.x,
-                y: origin.y,
-                scaleX: origin.scaleX,
-                scaleY: origin.scaleY,
-                borderRadius: 16,
-                opacity: 0.92,
-              } : {
-                x: [origin.x, 0, 0, 0],
-                y: [origin.y, 0, 0, 0],
-                scaleX: [origin.scaleX, 1.055, 0.986, 1],
-                scaleY: [origin.scaleY, 0.965, 1.022, 1],
-                borderRadius: [16, 10, 7, 8],
-                opacity: 1,
-              }}
-              transition={isClosing ? {
-                duration: 0.5,
-                ease: [0.32, 0, 0.2, 1],
-              } : {
-                duration: 0.92,
-                times: [0, 0.68, 0.84, 1],
-                ease: [0.2, 0.82, 0.22, 1],
-                layout: { type: 'spring', stiffness: 145, damping: 18, mass: 0.9 },
-              }}
+              onPointerDown={handleSwipeStart}
+              onPointerUp={handleSwipeEnd}
             >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeMedia.id}
-                  className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 1.025 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.985 }}
-                  transition={{ duration: 0.34, ease: 'easeOut' }}
-                >
-                  {activeMedia.type === 'video' ? (
-                    <>
+              {project.media.map((media, index) => {
+                const relativePosition = getRelativePosition(index);
+                const isActive = relativePosition === 0;
+                const cardMotion = getCardMotion(relativePosition);
+
+                return (
+                  <motion.div
+                    key={media.id}
+                    className={`absolute inset-0 overflow-hidden rounded-[18px] border bg-[#111] shadow-[0_26px_90px_rgba(0,0,0,0.7)] ${
+                      isActive
+                        ? 'border-white/18'
+                        : 'cursor-pointer border-white/8'
+                    }`}
+                    style={{
+                      zIndex: isActive ? 50 : 30 - Math.abs(relativePosition),
+                      pointerEvents: Math.abs(relativePosition) <= 1 ? 'auto' : 'none',
+                      transformOrigin: 'center center',
+                    }}
+                    animate={cardMotion}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 260,
+                      damping: 30,
+                      mass: 0.78,
+                    }}
+                    onClick={() => {
+                      if (!isActive) goToIndex(index);
+                    }}
+                  >
+                    {media.type === 'video' ? (
                       <video
-                        ref={videoRef}
-                        src={activeMedia.src}
-                        preload="metadata"
+                        ref={(element) => {
+                          videoRefs.current[index] = element;
+                        }}
+                        src={media.src}
+                        preload={Math.abs(relativePosition) <= 1 ? 'auto' : 'metadata'}
                         playsInline
-                        className="h-full w-full object-contain"
-                        onClick={togglePlayback}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onEnded={() => setIsPlaying(false)}
+                        muted={!isActive || isMuted}
+                        className="h-full w-full object-cover"
+                        onCanPlay={(event) => {
+                          if (isActive && event.currentTarget.paused) {
+                            event.currentTarget.play().catch(() => undefined);
+                          }
+                        }}
+                        onEnded={(event) => {
+                          if (videoRefs.current[activeIndexRef.current] === event.currentTarget) {
+                            showNext();
+                          }
+                        }}
                       />
+                    ) : (
+                      <img src={media.src} alt={media.alt} className="h-full w-full object-cover" />
+                    )}
+
+                    {!isActive && (
+                      <span
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          backgroundColor: Math.abs(relativePosition) === 1
+                            ? 'rgba(0, 0, 0, 0.52)'
+                            : 'rgba(0, 0, 0, 0.66)',
+                        }}
+                      />
+                    )}
+
+                    {isActive && media.type === 'video' && (
                       <button
                         type="button"
-                        onClick={togglePlayback}
-                        className={`absolute inset-0 m-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/35 bg-white/22 text-white shadow-[0_12px_38px_rgba(0,0,0,0.38)] backdrop-blur-md transition-all hover:scale-105 hover:bg-white/32 sm:h-20 sm:w-20 ${isPlaying ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}
-                        aria-label={isPlaying ? 'Pause video' : 'Play video'}
-                        title={isPlaying ? 'Pause' : 'Play'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIsMuted((current) => !current);
+                        }}
+                        className="absolute right-3 top-3 z-[60] flex h-9 w-9 items-center justify-center rounded-full bg-white/86 text-black/75 shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                        aria-label={isMuted ? 'Turn sound on' : 'Mute video'}
+                        title={isMuted ? 'Turn sound on' : 'Mute video'}
                       >
-                        {isPlaying ? <Pause className="h-7 w-7 fill-current" /> : <Play className="ml-1 h-7 w-7 fill-current" />}
+                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                       </button>
-                    </>
-                  ) : (
-                    <img src={activeMedia.src} alt={activeMedia.alt} className="h-full w-full object-contain" />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-
-              <motion.img
-                src={project.image}
-                alt=""
-                className="pointer-events-none absolute inset-0 z-20 h-full w-full object-cover"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: isClosing ? 1 : 0 }}
-                transition={{ duration: isClosing ? 0.18 : 0.3, delay: isClosing ? 0.18 : 0.2 }}
-              />
-            </motion.div>
-
-            {project.media.length > 1 && (
-              <button
-                type="button"
-                onClick={showNext}
-                className="absolute right-3 z-30 hidden h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/10 text-white/84 backdrop-blur-md transition-colors hover:bg-white hover:text-black sm:flex"
-                aria-label="Next media"
-                title="Next"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-
-          <div className="shrink-0 border-t border-white/10 bg-black/55 px-4 py-3 sm:px-7 sm:py-4">
-            <div className="mx-auto flex max-w-6xl items-center gap-3">
-              <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex w-max gap-2">
-                  {project.media.map((media, index) => (
-                    <button
-                      key={media.id}
-                      type="button"
-                      onClick={() => selectMedia(index)}
-                      className={`relative h-14 overflow-hidden rounded-md border transition-all sm:h-16 ${
-                        media.orientation === 'portrait' ? 'w-10 sm:w-12' : 'w-20 sm:w-24'
-                      } ${index === activeIndex ? 'border-white opacity-100' : 'border-white/12 opacity-48 hover:opacity-80'}`}
-                      aria-label={`Open media ${index + 1}`}
-                    >
-                      {media.type === 'video' ? (
-                        <video src={media.src} preload="metadata" muted className="h-full w-full object-cover" />
-                      ) : (
-                        <img src={media.src} alt="" loading="lazy" className="h-full w-full object-cover" />
-                      )}
-                      <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/65 text-white">
-                        {media.type === 'video' ? <Video className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <span className="shrink-0 font-ui text-[10px] tabular-nums text-white/42">
-                {String(activeIndex + 1).padStart(2, '0')} / {String(project.media.length).padStart(2, '0')}
-              </span>
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
+
+            <button
+              type="button"
+              onClick={showNext}
+              className="absolute right-3 z-[70] flex h-11 w-11 items-center justify-center rounded-full border border-white/18 bg-black/38 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-white hover:text-black sm:right-8 sm:h-12 sm:w-12"
+              aria-label="Next video"
+              title="Next"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </motion.div>
       )}
