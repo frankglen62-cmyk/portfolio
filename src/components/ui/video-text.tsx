@@ -66,7 +66,7 @@ export function VideoText({
               dominantBaseline="central"
               fill="white"
               style={{
-                fontSize: 'clamp(2.35rem, 9vw, 9rem)',
+                fontSize: 'clamp(2.35rem, calc(9 * var(--vw)), 9rem)',
                 fontWeight: 900,
                 textTransform: 'uppercase',
                 letterSpacing: '0',

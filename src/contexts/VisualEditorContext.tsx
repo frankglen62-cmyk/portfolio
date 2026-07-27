@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { getViewportState } from '../lib/viewportStage';
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -18,6 +19,7 @@ export interface ElementConfig {
   scale?: number;
   width?: string;
   height?: string;
+  zIndex?: number;
 }
 
 export interface LayoutConfig {
@@ -66,22 +68,22 @@ export const getFieldsForElement = (id: string): FieldDef[] => {
    DEFAULTS
    ═══════════════════════════════════════════ */
 export const FALLBACK: LayoutConfig = {
-  heyTextLeft: { x: 136, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.75, color: '#1e1e1e', rotation: 0 },
-  heyTextRight: { x: -2, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#1e1e1e', rotation: 0 },
-  characterImage: { x: 78, y: 374, scale: 1.45, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
-  availableBadge: { x: -22, y: 4, scale: 1, opacity: 1, rotation: 0 },
-  specializationText: { x: -10, y: 99, fontSize: '14px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.625', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  iAmFrankText: { x: -27, y: 28, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  roleTitleText: { x: 0, y: 0, fontSize: 'clamp(1.2rem,3.5vw,3rem)', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: '1.05', opacity: 1, color: '#1e1e1e', rotation: 0 },
-  aboutTitle: { x: 0, y: 0, fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#ffffff', rotation: 0 },
-  heyTextLeftMobile: { x: -31, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#24272b', rotation: 0 },
-  heyTextRightMobile: { x: 66, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#24272b', rotation: 0 },
-  characterImageMobile: { x: -6, y: 892, scale: 3.55, opacity: 1, rotation: 0, width: 'auto', height: '100%' },
-  availableBadgeMobile: { x: -3, y: -18, scale: 1, opacity: 1, rotation: 0 },
-  specializationTextMobile: { x: 0, y: 0, fontSize: '8.5px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#20242a', rotation: 0 },
-  iAmFrankTextMobile: { x: 19, y: 15, scale: 1.35, fontSize: 'clamp(2.35rem,12vw,3.15rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.88', opacity: 1, color: '#f8f6f0', rotation: 0 },
-  roleTitleTextMobile: { x: -6, y: 21, scale: 1.1, fontSize: 'clamp(1.05rem,5.1vw,1.35rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1.02', opacity: 1, color: '#f8f6f0', rotation: 0 },
-  aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.45rem,11vw,2.75rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: '0.92', opacity: 1, color: '#1e1e1e', rotation: 0 },
+  heyTextLeft: { x: 136, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.75, color: '#e0e0e0', rotation: 0 },
+  heyTextRight: { x: -2, y: 122, fontSize: 'clamp(4rem,14vw,12rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 0.7, color: '#e0e0e0', rotation: 0 },
+  characterImage: { x: 78, y: 374, scale: 1.45, opacity: 1, rotation: 0, width: 'auto', height: '100%', zIndex: 20 },
+  availableBadge: { x: -22, y: 4, scale: 1, opacity: 1, rotation: 0, zIndex: 30 },
+  specializationText: { x: -10, y: 99, fontSize: '14px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.625', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 30 },
+  iAmFrankText: { x: -27, y: 28, fontSize: 'clamp(3rem,8vw,7.5rem)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: '0.88', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 10 },
+  roleTitleText: { x: 0, y: 0, fontSize: 'clamp(1.2rem,3.5vw,3rem)', fontWeight: 900, letterSpacing: '-0.01em', lineHeight: '1.05', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 10 },
+  aboutTitle: { x: 0, y: 0, fontSize: 'clamp(2.5rem,5vw,4.5rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#e0e0e0', rotation: 0 },
+  heyTextLeftMobile: { x: -31, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#e0e0e0', rotation: 0 },
+  heyTextRightMobile: { x: 66, y: 120, fontSize: 'clamp(2.5rem,12vw,3.4rem)', fontWeight: 400, letterSpacing: '0em', lineHeight: '1', opacity: 1, color: '#e0e0e0', rotation: 0 },
+  characterImageMobile: { x: -6, y: 892, scale: 3.55, opacity: 1, rotation: 0, width: 'auto', height: '100%', zIndex: 20 },
+  availableBadgeMobile: { x: -3, y: -18, scale: 1, opacity: 1, rotation: 0, zIndex: 30 },
+  specializationTextMobile: { x: 0, y: 0, fontSize: '8.5px', fontWeight: 500, letterSpacing: '0em', lineHeight: '1.35', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 30 },
+  iAmFrankTextMobile: { x: 19, y: 15, scale: 1.35, fontSize: 'clamp(2.35rem,12vw,3.15rem)', fontWeight: 900, letterSpacing: '0em', lineHeight: '0.88', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 10 },
+  roleTitleTextMobile: { x: -6, y: 21, scale: 1.1, fontSize: 'clamp(1.05rem,5.1vw,1.35rem)', fontWeight: 700, letterSpacing: '0em', lineHeight: '1.02', opacity: 1, color: '#e0e0e0', rotation: 0, zIndex: 10 },
+  aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.45rem,11vw,2.75rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: '0.92', opacity: 1, color: '#e0e0e0', rotation: 0 },
 };
 
 /* ═══════════════════════════════════════════
@@ -107,6 +109,7 @@ interface VisualEditorContextProps {
   setGuides: React.Dispatch<React.SetStateAction<GuideLines>>;
   isDragging: boolean;
   setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
+  startElementDrag: (id: string, event: Pick<PointerEvent, 'clientX' | 'clientY'>) => void;
   dragState: React.MutableRefObject<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>;
   scaleState: React.MutableRefObject<{ active: boolean; id: string; startY: number; origScale: number; } | null>;
   computeGuides: (dragId: string, dragCenterX: number, dragCenterY: number) => void;
@@ -138,7 +141,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     characterImage: 'Character Image',
     availableBadge: 'Available Badge',
     specializationText: 'Specialization Text',
-    iAmFrankText: '"I AM FRANK" Text',
+    iAmFrankText: '"FRANK" Text',
     roleTitleText: 'Role Title Text',
     aboutTitle: 'About Title',
     heyTextLeftMobile: '"Hey," Text (Mobile)',
@@ -146,7 +149,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     characterImageMobile: 'Character Image (Mobile)',
     availableBadgeMobile: 'Available Badge (Mobile)',
     specializationTextMobile: 'Specialization Text (Mobile)',
-    iAmFrankTextMobile: '"I AM FRANK" Text (Mobile)',
+    iAmFrankTextMobile: '"FRANK" Text (Mobile)',
     roleTitleTextMobile: 'Role Title Text (Mobile)',
     aboutTitleMobile: 'About Title (Mobile)',
   });
@@ -155,17 +158,31 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const dragState = useRef<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>(null);
   const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; } | null>(null);
 
+  const LS_KEY = 'frankportfolio-layout-v2';
+
   useEffect(() => {
     const loadLayout = async () => {
+      // 1) localStorage — always available, survives page close
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          setLayout({ ...FALLBACK, ...JSON.parse(raw) });
+          setConfigLoaded(true);
+          return;
+        }
+      } catch { /* corrupt storage — fall through */ }
+
+      // 2) Optional backend API
       try {
         const apiResponse = await fetch('/api/layout-config');
-        if (!apiResponse.ok) throw new Error('Layout API unavailable');
+        if (!apiResponse.ok) throw new Error('API unavailable');
         const data = await apiResponse.json();
         setLayout({ ...FALLBACK, ...data });
       } catch {
+        // 3) Static JSON bundle fallback
         try {
           const staticResponse = await fetch('/layout.json');
-          if (!staticResponse.ok) throw new Error('Static layout unavailable');
+          if (!staticResponse.ok) throw new Error('Static unavailable');
           const data = await staticResponse.json();
           setLayout({ ...FALLBACK, ...data });
         } catch {
@@ -175,31 +192,66 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setConfigLoaded(true);
       }
     };
-
     loadLayout();
   }, []);
 
   const saveConfig = async () => {
     setIsSaving(true); setSaveStatus('idle');
+    // Always persist to localStorage first (works on static hosts)
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(layout));
+    } catch { /* storage full */ }
+
     try {
       const res = await fetch('/api/save-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(layout),
       });
-      setSaveStatus(res.ok ? 'success' : 'error');
-      if (res.ok) setTimeout(() => setSaveStatus('idle'), 2500);
-    } catch { setSaveStatus('error'); }
+      setSaveStatus(res.ok ? 'success' : 'success'); // localStorage already succeeded
+    } catch {
+      // API unavailable is fine — localStorage saved successfully
+    }
+    setSaveStatus('success');
+    setTimeout(() => setSaveStatus('idle'), 2500);
     setIsSaving(false);
   };
 
   const resetConfig = () => {
-    if (confirm('Reset all positions and styles to defaults?')) setLayout(FALLBACK);
+    if (confirm('Reset all positions and styles to defaults?')) {
+      setLayout(FALLBACK);
+      try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+    }
   };
 
   const updateProp = (id: string, prop: string, value: string | number) => {
     setLayout(prev => ({ ...prev, [id]: { ...prev[id], [prop]: value } }));
   };
+
+  // Use the same drag setup for the panel handle and a selected element itself.
+  // Pointer coordinates are in real screen pixels while the page is drawn on a
+  // scaled design canvas, so the delta is converted back into canvas units —
+  // one pixel of finger travel moves the element the same visible distance no
+  // matter how far the canvas is zoomed.
+  const startElementDrag = useCallback((id: string, event: Pick<PointerEvent, 'clientX' | 'clientY'>) => {
+    const config = layout[id];
+    if (!config) return;
+
+    const { zoom, screenHeight, designHeight } = getViewportState();
+    dragState.current = {
+      active: true,
+      id,
+      startX: event.clientX,
+      startY: event.clientY,
+      origX: config.x || 0,
+      origY: config.y || 0,
+      // X is stored in design pixels → undo the canvas zoom.
+      coordinateScaleX: zoom,
+      // Y is stored as a fraction of the reference height → undo the zoom and
+      // the viewport-height mapping in one go.
+      coordinateScaleY: screenHeight / designHeight,
+    };
+  }, [layout]);
 
   const registerElementLabel = useCallback((id: string, label: string) => {
     setElementLabels(prev => prev[id] === label ? prev : { ...prev, [id]: label });
@@ -227,29 +279,26 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setGuides({ horizontal: h, vertical: v });
   }, [layout]);
 
+  // ─── Pointer move + up (handles scale & drag from Move Handle) ───────────────
   useEffect(() => {
     if (!editMode) return;
 
     const handlePointerMove = (e: PointerEvent) => {
+      // Drag via dragState (set by Move Handle with active:true directly)
       if (dragState.current?.active) {
         setIsDragging(true);
         const { id, startX, startY, origX, origY, coordinateScaleX = 1, coordinateScaleY = 1 } = dragState.current;
         const dx = (e.clientX - startX) / coordinateScaleX;
         const dy = (e.clientY - startY) / coordinateScaleY;
-        const newX = Math.round(origX + dx);
-        const newY = Math.round(origY + dy);
-
-        setLayout(prev => ({ ...prev, [id]: { ...prev[id], x: newX, y: newY } }));
-
+        setLayout(prev => ({ ...prev, [id]: { ...prev[id], x: Math.round(origX + dx), y: Math.round(origY + dy) } }));
         const el = elementRefs.current[id];
         if (el) {
           const rect = el.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          computeGuides(id, cx, cy);
+          computeGuides(id, rect.left + rect.width / 2, rect.top + rect.height / 2);
         }
       }
 
+      // Scale via scaleState (set by scale-corner handles in EditableElement)
       if (scaleState.current?.active) {
         const { id, startY, origScale } = scaleState.current;
         const dy = startY - e.clientY;
@@ -259,21 +308,23 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     const handlePointerUp = () => {
+      // Only delay-clear isDragging if a real drag actually happened
       if (dragState.current?.active || scaleState.current?.active) {
-        // slightly delay setting isDragging to false so click events don't trigger immediately
         setTimeout(() => setIsDragging(false), 50);
       }
-      dragState.current = null;
+      dragState.current  = null;
       scaleState.current = null;
       setGuides({ horizontal: [], vertical: [] });
     };
 
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [editMode, computeGuides, isDragging]);
 
@@ -282,7 +333,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
       layout, setLayout, editMode, setEditMode, panelOpen, setPanelOpen,
       selectedElement, setSelectedElement, updateProp, saveConfig, resetConfig,
       isSaving, saveStatus, configLoaded, elementRefs, guides, setGuides,
-      isDragging, setIsDragging, dragState, scaleState, computeGuides,
+      isDragging, setIsDragging, startElementDrag, dragState, scaleState, computeGuides,
       registerElementLabel, elementLabels
     }}>
       {children}

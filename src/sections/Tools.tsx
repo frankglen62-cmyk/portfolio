@@ -4,44 +4,41 @@ import { ToolsFanCards, type ToolFanCategory } from '../components/ui/tools-fan-
 
 const toolCategories: ToolFanCategory[] = [
   {
-    categoryName: 'Ecommerce and Store Platforms',
-    purpose: 'Managing product listings, storefront content, inventory, orders, and daily marketplace operations.',
-    accent: '#f59e0b',
-    backgroundImage: 'skills/platforms.webp',
-    backgroundPosition: '66% center',
+    categoryName: 'Ecommerce Platforms',
+    shortName: 'Ecommerce',
+    purpose: 'Storefront, listing, inventory, and marketplace tools for daily ecommerce operations.',
+    backgroundPosition: '6% center',
     tools: [
       { name: 'Shopify', id: 'shopify.svg' },
-      { name: 'WordPress', id: 'wordpress.svg' },
-      { name: 'Mailchimp', id: 'mailchimp.svg' },
-      { name: 'eBay Seller Hub', id: 'ebay.svg' },
-      { name: 'Amazon Seller Central', id: 'amazon.png' },
-      { name: 'Poshmark', id: 'poshmark.svg' },
+      { name: 'Amazon', id: 'amazon.png' },
+      { name: 'eBay', id: 'ebay.svg' },
       { name: 'Etsy', id: 'etsy.png' },
       { name: 'Walmart', id: 'walmart.png' },
+      { name: 'WordPress', id: 'wordpress.svg' },
+      { name: 'Mailchimp', id: 'mailchimp.svg' },
+      { name: 'Poshmark', id: 'poshmark.svg' },
       { name: 'AliExpress', id: 'aliexpress.png' },
-    ]
+    ],
   },
   {
-    categoryName: 'Google Workspace and Productivity',
-    purpose: 'Organizing email, schedules, files, product sheets, reports, and client documentation in one workflow.',
-    accent: '#4285f4',
-    backgroundImage: 'skills/data-management.webp',
-    backgroundPosition: '68% center',
+    categoryName: 'Google Workspace',
+    shortName: 'Google',
+    purpose: 'Connected email, schedules, files, product sheets, and documentation in one workflow.',
+    backgroundPosition: '19% center',
     tools: [
       { name: 'Google Workspace', id: 'google-workspace.svg' },
       { name: 'Gmail', id: 'gmail.svg' },
-      { name: 'Google Calendar', id: 'google-calendar.svg' },
-      { name: 'Google Drive', id: 'google-drive.svg' },
-      { name: 'Google Sheets', id: 'google-sheets.svg' },
-      { name: 'Google Docs', id: 'google-docs.svg' },
-    ]
+      { name: 'Calendar', id: 'google-calendar.svg' },
+      { name: 'Drive', id: 'google-drive.svg' },
+      { name: 'Sheets', id: 'google-sheets.svg' },
+      { name: 'Docs', id: 'google-docs.svg' },
+    ],
   },
   {
-    categoryName: 'Microsoft and Office Tools',
-    purpose: 'Creating reports and presentations while handling email, spreadsheets, shared files, and team collaboration.',
-    accent: '#7c83fd',
-    backgroundImage: 'ecommerce-skills-dashboard.png',
-    backgroundPosition: 'center',
+    categoryName: 'Microsoft Office',
+    shortName: 'Microsoft',
+    purpose: 'Professional spreadsheets, reports, presentations, email, and shared file workflows.',
+    backgroundPosition: '32% center',
     tools: [
       { name: 'Microsoft 365', id: 'microsoft-365.svg' },
       { name: 'Outlook', id: 'outlook.svg' },
@@ -50,54 +47,59 @@ const toolCategories: ToolFanCategory[] = [
       { name: 'PowerPoint', id: 'ms-powerpoint.svg' },
       { name: 'OneNote', id: 'ms-onenote.svg' },
       { name: 'OneDrive', id: 'ms-onedrive.svg' },
-      { name: 'Teams', id: 'ms-teams.svg' },
-      { name: 'SharePoint', id: 'ms-sharepoint.svg' },
-    ]
+    ],
   },
   {
-    categoryName: 'Project Management and Communication',
-    purpose: 'Planning tasks, tracking deadlines, documenting processes, and keeping client and team communication clear.',
-    accent: '#a78bfa',
-    backgroundImage: 'skills/inventory-orders.webp',
-    backgroundPosition: '70% center',
+    categoryName: 'Project Management',
+    shortName: 'Projects',
+    purpose: 'Clear task planning, organized documentation, deadlines, and dependable project tracking.',
+    backgroundPosition: '44% center',
     tools: [
       { name: 'Trello', id: 'trello.svg' },
-      { name: 'Slack', id: 'slack.svg' },
-      { name: 'Zoom', id: 'zoom.svg' },
       { name: 'Asana', id: 'asana.svg' },
       { name: 'Notion', id: 'notion.svg' },
-    ]
+    ],
   },
   {
-    categoryName: 'AI and Content Tools',
-    purpose: 'Speeding up research, writing, ideation, image, video, voice, and content-production workflows.',
-    accent: '#10b981',
-    backgroundImage: 'skills/seo-optimization.webp',
-    backgroundPosition: '72% center',
+    categoryName: 'Communication',
+    shortName: 'Connect',
+    purpose: 'Fast client updates, meetings, shared conversations, and remote team collaboration.',
+    backgroundPosition: '57% center',
+    tools: [
+      { name: 'Slack', id: 'slack.svg' },
+      { name: 'Zoom', id: 'zoom.svg' },
+      { name: 'Teams', id: 'ms-teams.svg' },
+      { name: 'SharePoint', id: 'ms-sharepoint.svg' },
+    ],
+  },
+  {
+    categoryName: 'AI & Content',
+    shortName: 'AI Content',
+    purpose: 'Research, writing, ideation, voice, and faster content-production workflows.',
+    backgroundPosition: '69% center',
     tools: [
       { name: 'ChatGPT', id: 'chatgpt.svg' },
       { name: 'Gemini', id: 'gemini.svg' },
       { name: 'Claude', id: 'claude.svg' },
-      { name: 'Microsoft Copilot', id: 'copilot.svg' },
-      { name: 'Higgsfield', id: 'higgsfield.png' },
+      { name: 'Copilot', id: 'copilot.svg' },
       { name: 'Perplexity', id: 'perplexity.png' },
-      { name: 'Google Labs', id: 'google-labs.png' },
       { name: 'ElevenLabs', id: 'elevenlabs.png' },
+      { name: 'Higgsfield', id: 'higgsfield.png' },
+      { name: 'Google Labs', id: 'google-labs.png' },
       { name: 'Veo 3.1', id: 'veo-3.1.png' },
-      { name: 'Open Art', id: 'openart.png' },
+      { name: 'OpenArt', id: 'openart.png' },
       { name: 'Kling AI', id: 'kling.png' },
       { name: 'Qwen', id: 'qwen.png' },
       { name: 'Veed', id: 'veed.png' },
       { name: 'Grok', id: 'grok.png' },
       { name: 'Runway', id: 'runway.png' },
-    ]
+    ],
   },
   {
-    categoryName: 'Design, Video and Creative Tools',
-    purpose: 'Producing polished listing images, marketing graphics, videos, presentations, and optimized creative assets.',
-    accent: '#ff6b4a',
-    backgroundImage: 'skills/product-listing.webp',
-    backgroundPosition: '62% center',
+    categoryName: 'Design & Video',
+    shortName: 'Creative',
+    purpose: 'Polished listing images, marketing graphics, video edits, and optimized creative assets.',
+    backgroundPosition: '82% center',
     tools: [
       { name: 'Canva', id: 'canva.svg' },
       { name: 'CapCut', id: 'capcut.svg' },
@@ -105,63 +107,48 @@ const toolCategories: ToolFanCategory[] = [
       { name: 'After Effects', id: 'after-effects.png' },
       { name: 'Figma', id: 'figma.png' },
       { name: 'TinyPNG', id: 'tinypng.png' },
-    ]
+    ],
   },
   {
-    categoryName: 'Product Research and Ads',
-    purpose: 'Finding product opportunities, studying competitor ads, validating demand, and tracking creative trends.',
-    accent: '#ec4899',
-    backgroundImage: 'skills/product-research.webp',
-    backgroundPosition: '64% center',
+    categoryName: 'Product Research & Ads',
+    shortName: 'Research',
+    purpose: 'Product opportunities, competitor ads, demand validation, and creative trend research.',
+    backgroundPosition: '95% center',
     tools: [
       { name: 'Meta Ads Library', id: 'meta-ads-library.svg' },
       { name: 'Minea', id: 'minea.png' },
       { name: 'PiPiADS', id: 'pipiads.svg' },
       { name: 'WinningHunter', id: 'winninghunter.png' },
       { name: 'GetHookd', id: 'gethookd.svg' },
-    ]
-  }
+    ],
+  },
 ];
 
-export const Tools: React.FC = () => {
-  return (
-    <section
-      id="tools"
-      className="relative h-[100svh] overflow-hidden md:h-auto md:min-h-0"
-      style={{ background: '#000000' }}
-    >
-      <div className="flex h-[calc(100svh-64px)] w-full flex-col justify-center md:block md:h-auto">
-      {/* Top Centered Header — dark theme with premium typography */}
-      <ScrollReveal className="relative z-20 flex w-full flex-col items-center px-6 pb-0 pt-6 text-center pointer-events-none sm:px-6 sm:pb-2 sm:pt-24 lg:px-12">
-        <span
-          className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.3em] text-white/35 sm:mb-4 sm:text-[11px]"
-          style={{ fontFamily: '"JetBrains Mono", monospace' }}
-        >
+export const Tools: React.FC = () => (
+  <section
+    id="tools"
+    className="relative flex min-h-[760px] items-center overflow-hidden bg-[#080808] py-20 sm:min-h-[820px] sm:py-24"
+  >
+    {/* Gradient transition from previous section (black to #080808) */}
+    <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black to-[#080808] pointer-events-none z-0" />
+    <div className="w-full">
+      <ScrollReveal
+        className="relative z-20 mx-auto mb-10 max-w-3xl px-5 text-center sm:mb-12"
+        blur={false}
+      >
+        <span className="font-body text-[10px] font-semibold uppercase tracking-[0.3em] text-white/38">
           What I Use
         </span>
-        <h2
-          className="mb-3 text-[clamp(2.2rem,5vw,3.8rem)] font-bold uppercase leading-none tracking-tight text-white sm:mb-6"
-          style={{ fontFamily: '"Oswald", sans-serif' }}
-        >
+        <h2 className="mt-3 font-heading text-3xl font-semibold tracking-[-0.025em] text-white sm:text-4xl">
           Tools I Use
         </h2>
-        <div className="mx-auto mb-0 h-px w-10 bg-white/15 sm:mb-6" />
-        <p
-          className="mx-auto hidden max-w-xl text-[13px] leading-relaxed text-white/55 sm:block sm:text-base xl:text-lg"
-          style={{ fontFamily: '"Inter", sans-serif' }}
-        >
-          A curated toolkit of platforms and software I rely on to build, manage, and grow ecommerce businesses.
+        <p className="mx-auto mt-3 max-w-2xl font-body text-sm leading-relaxed text-slate-400 sm:text-[15px]">
+          A focused collection of platforms and software I use to manage ecommerce work,
+          create content, collaborate, and turn research into results.
         </p>
       </ScrollReveal>
 
-      {/* Interactive fan of category cards */}
-        <div className="relative z-10 w-full translate-y-[clamp(0px,calc(18svh-129.6px),20px)] md:translate-y-0">
-        <ToolsFanCards categories={toolCategories} />
-      </div>
-
-      {/* Bottom padding */}
-      <div className="h-0 sm:h-20" />
-      </div>
-    </section>
-  );
-};
+      <ToolsFanCards categories={toolCategories} />
+    </div>
+  </section>
+);

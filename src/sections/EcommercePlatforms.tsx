@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { CustomIcon } from '../components/CustomIcon';
+import { ScrollReveal } from '../components/animations/ScrollReveal';
 
 const platforms = [
   { name: 'Amazon', id: 'amazon.png' },
@@ -11,6 +12,7 @@ const platforms = [
   { name: 'AliExpress', id: 'aliexpress.png' },
 ];
 
+
 export const EcommercePlatforms: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
   
@@ -18,20 +20,24 @@ export const EcommercePlatforms: React.FC = () => {
   const marqueeItems = [...platforms, ...platforms, ...platforms, ...platforms];
 
   return (
-    <section id="ecommerce-platforms" ref={sectionRef} className="overflow-hidden bg-[#d8dbdf]">
+    <section id="ecommerce-platforms" ref={sectionRef} className="relative overflow-hidden bg-black">
+      {/* Gradient transition from previous section (#080808 to black) */}
+      <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#080808] to-black pointer-events-none z-0" />
       <div className="relative z-10 w-full mx-auto">
 
         {/* Infinite Marquee Section */}
-        <div className="w-full relative py-4 md:py-5 border-y border-dark/10 bg-white/30 backdrop-blur-sm overflow-hidden flex flex-col items-center">
+        <div className="w-full relative py-4 md:py-5 border-y border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden flex flex-col items-center">
           
-          <span className="font-ui text-[10px] md:text-xs font-semibold uppercase tracking-[0.3em] text-dark/40 mb-3 z-20 relative">
-            E-Commerce Experience
-          </span>
+          <ScrollReveal direction="up" duration={0.55} blur={false}>
+            <span className="font-ui text-[10px] md:text-xs font-semibold uppercase tracking-[0.3em] text-white/40 mb-3 z-20 relative block">
+              E-Commerce Experience
+            </span>
+          </ScrollReveal>
           
           <div className="relative w-full flex items-center">
             {/* Edge Gradients for SaaS look */}
-            <div className="absolute left-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-r from-[#d8dbdf] to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-l from-[#d8dbdf] to-transparent z-10 pointer-events-none" />
+            <div className="hidden md:block absolute left-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+            <div className="hidden md:block absolute right-0 top-0 bottom-0 w-16 md:w-48 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
           <motion.div
             animate={{ x: ["0%", "-50%"] }}
@@ -54,7 +60,7 @@ export const EcommercePlatforms: React.FC = () => {
                     className="w-full h-full object-contain transition-all duration-500 group-hover:scale-110 drop-shadow-sm grayscale group-hover:grayscale-0"
                   />
                 </div>
-                <span className="font-ui text-xs font-semibold text-dark/60 tracking-wider group-hover:text-dark transition-colors duration-300">
+                <span className="font-ui text-xs font-semibold text-white/60 tracking-wider group-hover:text-white transition-colors duration-300">
                   {platform.name}
                 </span>
               </div>

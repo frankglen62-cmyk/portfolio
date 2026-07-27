@@ -38,10 +38,9 @@
   --font-body: 'Instrument Sans', 'Inter', sans-serif;
   --font-ui: 'Montserrat', sans-serif;
 
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 810px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
+  /* Width-based breakpoints are deliberately removed. Layout must never change
+     with the window size — see the canvas variants below. */
+  --breakpoint-*: initial;
 
   --animate-float: float 6s ease-in-out infinite;
 
@@ -52,6 +51,82 @@
 }
 
 /* ============================================================
+   Canvas Variants — responsive without media queries
+   ------------------------------------------------------------
+   `sm:` `md:` `lg:` `xl:` no longer mean "the window is at least
+   N pixels wide". They mean "the DESKTOP design canvas (1920px)
+   is active", which is decided once per device, not per window
+   size. `max-*` variants mean the mobile canvas (372px).
+
+   The repeated attribute selectors are intentional: they give
+   sm < md < lg < xl ascending specificity so the cascade stays
+   identical to the old min-width media queries.
+   ============================================================ */
+@custom-variant sm ([data-canvas="desktop"] &);
+@custom-variant md ([data-canvas="desktop"][data-canvas="desktop"] &);
+@custom-variant lg ([data-canvas="desktop"][data-canvas="desktop"][data-canvas="desktop"] &);
+@custom-variant xl ([data-canvas="desktop"][data-canvas="desktop"][data-canvas="desktop"][data-canvas="desktop"] &);
+
+@custom-variant max-sm ([data-canvas="mobile"] &);
+@custom-variant max-md ([data-canvas="mobile"][data-canvas="mobile"] &);
+@custom-variant max-lg ([data-canvas="mobile"][data-canvas="mobile"][data-canvas="mobile"] &);
+@custom-variant max-xl ([data-canvas="mobile"][data-canvas="mobile"][data-canvas="mobile"][data-canvas="mobile"] &);
+
+/* ============================================================
+   Viewport Stage
+   ------------------------------------------------------------
+   Every length inside `.viewport-stage` is a DESIGN pixel on a
+   fixed-width canvas, scaled to the real screen with CSS zoom.
+
+   --vw / --vh replace raw `vw` / `svh` units, which are NOT
+   zoom-aware and would otherwise break the composition.
+   ============================================================ */
+:root {
+  --zoom: 1;
+  --design-w: 1920px;
+  --design-h: 919px;
+  --vw: 19.2px;
+}
+
+:root,
+.viewport-stage {
+  /* 1% of the real viewport height, expressed in design pixels. */
+  --vh: calc(1svh / var(--zoom));
+  /* Full viewport height in design pixels. */
+  --stage-h: calc(100 * var(--vh));
+}
+
+.viewport-stage {
+  zoom: var(--zoom);
+  position: relative;
+  width: var(--design-w);
+  margin-inline: auto;
+}
+
+/* Device-emulator look while previewing the other canvas from the editor. */
+[data-canvas-preview="true"] {
+  background: #101216;
+}
+
+[data-canvas-preview="true"] body {
+  background: #101216;
+}
+
+[data-canvas-preview="true"] .viewport-stage {
+  outline: 1px solid rgba(253, 180, 102, 0.55);
+  box-shadow: 0 0 0 100vmax rgba(16, 18, 22, 0.55);
+}
+
+/* Fixed overlays resolve against the window, not the stage — keep them inside
+   the emulated device frame while previewing. */
+[data-canvas-preview="true"] header[data-hero-nav],
+[data-canvas-preview="true"] #mobile-navigation {
+  left: calc(50% - var(--design-w) / 2);
+  right: auto;
+  width: var(--design-w);
+}
+
+/* ============================================================
    Base Styles
    ============================================================ */
 @layer base {
@@ -59,6 +134,9 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Keep the usable width constant so the canvas scale never shifts when a
+       scrollbar appears. */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -84,7 +162,7 @@
     border-radius: 0;
     box-shadow: none;
     z-index: 1;
-    min-height: 200svh;
+    min-height: calc(200 * var(--vh));
     display: block;   /* Hero manages its own layout with absolute/sticky children */
     overflow: visible;
   }
@@ -93,36 +171,42 @@
     translate: -50% 0;
   }
 
-  @media (min-width: 810px) {
-    /* Preserve one desktop composition without jumps at the old 1024px breakpoint. */
+  [data-canvas="desktop"] {
+    /* One desktop composition — no jumps at any window width. */
     section#home .hero-greeting {
-      gap: clamp(130px, 16vw, 300px) !important;
+      gap: calc(10.2 * var(--vw)) !important;
     }
 
     .hero-portrait {
-      height: 101svh !important;
+      height: calc(48.3 * var(--vw)) !important;
+      max-height: calc(101 * var(--vh)) !important;
     }
 
     .hero-badge-wrap,
     .hero-identity-wrap {
-      left: 8vw !important;
+      left: calc(8 * var(--vw)) !important;
     }
 
     .hero-specialization-wrap,
     .hero-role-wrap {
-      right: 8vw !important;
+      right: calc(8 * var(--vw)) !important;
+    }
+
+    .hero-identity-wrap,
+    .hero-role-wrap {
+      bottom: calc(4.3 * var(--vw)) !important;
     }
 
     section#home .hero-greeting-word {
-      font-size: clamp(4rem, min(14vw, 21.34svh), 12rem) !important;
+      font-size: calc(10.2 * var(--vw)) !important;
     }
 
     .hero-identity-title {
-      font-size: clamp(3rem, min(8vw, 13.34svh), 7.5rem) !important;
+      font-size: calc(6.38 * var(--vw)) !important;
     }
 
     .hero-role-title {
-      font-size: clamp(1.2rem, min(3.5vw, 5.34svh), 3rem) !important;
+      font-size: calc(2.55 * var(--vw)) !important;
     }
   }
 
@@ -140,34 +224,29 @@
   section#contact          { z-index: 13; }
   section#footer           { z-index: 14; position: relative; border-radius: 0; box-shadow: none; }
 
-  @media (max-width: 809px) {
+  [data-canvas="mobile"] {
     section#home .hero-scroll-out:first-of-type {
-      top: clamp(112px, 15svh, 138px) !important;
-      gap: clamp(10px, 4vw, 20px) !important;
+      top: clamp(112px, calc(15 * var(--vh)), 138px) !important;
+      gap: clamp(10px, calc(4 * var(--vw)), 20px) !important;
       padding-inline: 14px !important;
     }
 
     .hero-portrait {
-      height: 90svh !important;
-      bottom: -3.125svh !important;
+      height: calc(90 * var(--vh)) !important;
+      bottom: calc(-3.125 * var(--vh)) !important;
     }
 
     .hero-badge-wrap {
       display: block !important;
       left: 5.5% !important;
       top: auto !important;
-      bottom: 27svh !important;
+      bottom: calc(27 * var(--vh)) !important;
       max-width: 145px !important;
     }
 
     .hero-badge-wrap [data-editable-id="availableBadge"] > div {
       gap: 6px !important;
       padding: 6px 9px !important;
-      background: rgba(247, 248, 249, 0.88) !important;
-      border-color: rgba(30, 30, 30, 0.08) !important;
-      box-shadow: 0 8px 24px rgba(12, 18, 28, 0.12) !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
     }
 
     .hero-badge-wrap [data-editable-id="availableBadge"] > div > span:first-child {
@@ -184,7 +263,7 @@
       display: block !important;
       right: 5% !important;
       top: auto !important;
-      bottom: 27svh !important;
+      bottom: calc(27 * var(--vh)) !important;
       width: 118px !important;
       max-width: 118px !important;
       text-align: left !important;
@@ -209,7 +288,7 @@
     }
 
     .hero-bottom-fade {
-      height: 9svh !important;
+      height: calc(9 * var(--vh)) !important;
       background: linear-gradient(to bottom, rgba(240, 241, 243, 0) 0%, rgba(240, 241, 243, 0.12) 65%, rgba(240, 241, 243, 0.36) 100%) !important;
     }
 
@@ -219,16 +298,18 @@
 
     .hero-identity-wrap,
     .hero-role-wrap {
-      bottom: 9svh !important;
+      bottom: calc(9 * var(--vh)) !important;
     }
 
     .hero-identity-wrap {
-      left: 5% !important;
+      left: 4% !important;
     }
 
     .hero-role-wrap {
-      right: 5% !important;
+      left: 4% !important;
+      right: auto !important;
       max-width: 44%;
+      text-align: left !important;
     }
 
     .hero-identity-title,
@@ -277,7 +358,7 @@
     }
 
     .hero-about-panel p {
-      font-size: clamp(13px, 3.45vw, 14px) !important;
+      font-size: clamp(13px, calc(3.45 * var(--vw)), 14px) !important;
       line-height: 1.55 !important;
       margin-bottom: 18px !important;
     }
@@ -311,60 +392,9 @@
     }
   }
 
-  @media (max-width: 599px) {
-    .hero-identity-wrap [data-editable-id="iAmFrankText"] {
-      --editable-x: 0px !important;
-      --editable-y: 0px !important;
-      --editable-scale: 1.15 !important;
-    }
-
-    .hero-role-wrap [data-editable-id="roleTitleText"] {
-      --editable-x: 0px !important;
-      --editable-y: 0px !important;
-      --editable-scale: 0.95 !important;
-    }
-
-    .hero-identity-wrap {
-      left: 4% !important;
-    }
-
-    .hero-role-wrap {
-      right: 4% !important;
-    }
-  }
-
-  @media (max-width: 360px) {
-    .hero-identity-wrap,
-    .hero-role-wrap {
-      bottom: 7svh !important;
-    }
-
-    .hero-identity-wrap [data-editable-id="iAmFrankText"] {
-      --editable-scale: 1.05 !important;
-    }
-
-    .hero-role-wrap [data-editable-id="roleTitleText"] {
-      --editable-scale: 0.85 !important;
-    }
-
-    .hero-identity-title {
-      font-size: clamp(2.05rem, 11vw, 2.45rem) !important;
-    }
-
-    .hero-role-title {
-      font-size: clamp(0.9rem, 4.75vw, 1.1rem) !important;
-    }
-  }
-
-  @media (min-width: 600px) and (max-width: 809px) {
-    .hero-portrait [data-editable-id="characterImage"] {
-      --editable-y: 35svh !important;
-      transform:
-        translate(var(--editable-x), var(--editable-y))
-        rotate(var(--editable-rotation))
-        scale(2.05) !important;
-    }
-  }
+  /* The old 599px / 360px / 600–809px tiers are gone: the mobile canvas is
+     always 372 design pixels wide, so only one mobile composition exists.
+     Their surviving declarations were folded into [data-canvas="mobile"]. */
 
   .hero-specialization-copy {
     display: flex;
@@ -401,7 +431,7 @@
     will-change: transform, filter, opacity;
   }
 
-  @media (max-width: 809px) {
+  [data-canvas="mobile"] {
     .hero-specialization-copy-mobile {
       min-width: 118px;
       color: #ffffff;
@@ -466,10 +496,10 @@
    Utility Classes — Prolific Aesthetic
    ============================================================ */
 @layer utilities {
-  @media (max-width: 809px) {
+  [data-canvas="mobile"] {
     .mobile-side-nav {
       bottom: max(0.75rem, env(safe-area-inset-bottom));
-      max-width: calc(100vw - 1.5rem);
+      max-width: calc(100 * var(--vw) - 1.5rem);
     }
 
     .mobile-safe-footer {
@@ -549,7 +579,7 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  @media (min-width: 810px) {
+  [data-canvas="desktop"] {
     .skills-bento-grid {
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;
@@ -605,7 +635,7 @@
       0 0 0 1px rgba(246, 223, 107, 0.3);
   }
 
-  @media (min-width: 810px) {
+  [data-canvas="desktop"] {
     .skills-card--tall {
       grid-row: span 2;
     }

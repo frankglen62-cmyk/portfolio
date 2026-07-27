@@ -5,52 +5,52 @@ import { WordPullUp } from '../components/animations/WordPullUp';
 
 const accordionSkills = [
   {
-    label: 'Marketplace & Store Operations',
+    label: 'Ecommerce Platforms',
     sublabel: 'PLATFORMS',
-    image: `${import.meta.env.BASE_URL}skills/platforms.webp`,
+    image: `${import.meta.env.BASE_URL}skills/platforms.png`,
     imageAlt: 'Ecommerce operations workspace with store dashboards and parcels',
-    description: 'Day-to-day storefront support that keeps listings, orders, and channel activity organized.',
-    detailTags: ['Shopify Admin', 'eBay Seller Hub', 'Amazon Seller Central', 'Walmart Marketplace']
+    description: 'Marketplace and store admin systems used for daily ecommerce operations',
+    detailTags: ['eBay Seller Hub', 'Shopify Admin', 'Amazon Seller Central', 'Walmart Marketplace', 'Etsy Shop Manager', 'Poshmark']
   },
   {
-    label: 'Conversion-Ready Listings',
+    label: 'Product Listing',
     sublabel: 'LISTING',
-    image: `${import.meta.env.BASE_URL}skills/product-listing.webp`,
+    image: `${import.meta.env.BASE_URL}skills/product-listing.png`,
     imageAlt: 'Product photography and listing production workspace',
-    description: 'Complete, customer-friendly product pages with polished copy, imagery, and accurate attributes.',
-    detailTags: ['Titles & Bullets', 'Descriptions', 'Item Specifics', 'Variations', 'SKU Structure']
+    description: 'Clean, searchable product pages with complete item details and organized SKUs',
+    detailTags: ['Product Titles', 'Descriptions', 'Bullet Points', 'Categories', 'Item Specifics', 'Variations', 'SKU Organization']
   },
   {
-    label: 'Marketplace SEO',
-    sublabel: 'VISIBILITY',
-    image: `${import.meta.env.BASE_URL}skills/seo-optimization.webp`,
+    label: 'SEO & Optimization',
+    sublabel: 'SEARCH',
+    image: `${import.meta.env.BASE_URL}skills/seo-optimization.png`,
     imageAlt: 'Marketplace SEO analytics and optimized product page',
-    description: 'Intent-led optimization that improves relevance, discoverability, and listing clarity.',
-    detailTags: ['Keyword Research', 'SEO Titles', 'Search Copy', 'Meta Data', 'Listing Audits']
+    description: 'Keyword-led listing improvements for stronger marketplace search visibility',
+    detailTags: ['Keyword Research', 'SEO Titles', 'Search Descriptions', 'eBay Item Specifics', 'Amazon Bullets', 'Shopify Meta Tags']
   },
   {
-    label: 'Product & Competitor Research',
+    label: 'Product Research',
     sublabel: 'RESEARCH',
-    image: `${import.meta.env.BASE_URL}skills/product-research.webp`,
+    image: `${import.meta.env.BASE_URL}skills/product-research.png`,
     imageAlt: 'Product samples beside a competitor research dashboard',
-    description: 'Structured market research for smarter product selection, positioning, and pricing decisions.',
-    detailTags: ['Demand Signals', 'Competitor Analysis', 'Pricing', 'Supplier Checks', 'Trend Review']
+    description: 'Demand, competitor, pricing, and supplier research for smarter listing decisions',
+    detailTags: ['Demand Research', 'Competitor Analysis', 'Pricing Research', 'Supplier Research', 'Trend Checking', 'Profitable Products']
   },
   {
-    label: 'Inventory & Order Support',
-    sublabel: 'OPERATIONS',
-    image: `${import.meta.env.BASE_URL}skills/inventory-orders.webp`,
+    label: 'Inventory & Orders',
+    sublabel: 'MANAGEMENT',
+    image: `${import.meta.env.BASE_URL}skills/inventory-orders.png`,
     imageAlt: 'Inventory station with parcels, scanner, and order dashboard',
-    description: 'Accurate stock and fulfillment support from order intake through tracking and returns.',
-    detailTags: ['Stock Monitoring', 'Order Processing', 'Tracking Updates', 'Fulfillment', 'Returns']
+    description: 'Reliable stock, order, fulfillment, tracking, and returns support',
+    detailTags: ['Inventory Monitoring', 'Stock Updates', 'Price Adjustments', 'Order Processing', 'Tracking Updates', 'Returns']
   },
   {
-    label: 'Ecommerce Data Systems',
+    label: 'Data Management',
     sublabel: 'DATA',
-    image: `${import.meta.env.BASE_URL}skills/data-management.webp`,
+    image: `${import.meta.env.BASE_URL}skills/data-management.png`,
     imageAlt: 'Ecommerce spreadsheet and reporting data workspace',
-    description: 'Clean spreadsheet and catalog workflows that make store data dependable and easy to maintain.',
-    detailTags: ['Excel', 'Google Sheets', 'CSV Import & Export', 'Bulk Updates', 'Reporting']
+    description: 'Spreadsheet, CSV, and reporting workflows that keep store data tidy',
+    detailTags: ['Microsoft Excel', 'Google Sheets', 'CSV Imports', 'CSV Exports', 'Bulk Updates', 'Reports']
   }
 ];
 
@@ -58,17 +58,21 @@ export const Skills: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="skills" ref={sectionRef} className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-[#d8dbdf] py-6 text-[#1a1a1a] shadow-[0_-32px_0_#d8dbdf] sm:py-10 md:block md:min-h-0 md:py-28 md:shadow-[0_-20px_50px_rgba(0,0,0,0.08)]">
+    <section id="skills" ref={sectionRef} className="relative flex min-h-[calc(100*var(--vh))] flex-col justify-center overflow-hidden bg-[#080808] py-6 font-heading text-white sm:py-10 md:block md:min-h-0 md:py-28">
+      
+      {/* Gradient transition from previous section (black to #080808) */}
+      <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black to-[#080808] pointer-events-none" />
+
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12">
         
         {/* Header */}
         <ScrollReveal className="mb-3 text-center sm:mb-5 md:mb-8">
-          <span className="font-body text-[13px] font-medium text-dark/45 mb-3 block">
+          <span className="font-heading text-[13px] font-medium text-white/45 mb-3 block">
             E-Commerce Expertise
           </span>
           <WordPullUp
             words="My Skills"
-            className="font-body text-[clamp(2.8rem,6vw,5rem)] font-medium leading-none text-dark tracking-normal"
+            className="font-heading text-[clamp(2.8rem,calc(6*var(--vw)),5rem)] font-semibold leading-none text-white tracking-[-0.025em]"
             wrapperFramerProps={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { staggerChildren: 0.15, delayChildren: 0.1 } }
@@ -82,7 +86,7 @@ export const Skills: React.FC = () => {
             items={accordionSkills} 
             collapsedHeight={74} 
             expandedHeight={320} 
-            className="w-full text-[#1a1a1a]"
+            className="w-full font-heading text-white"
           />
         </ScrollReveal>
         

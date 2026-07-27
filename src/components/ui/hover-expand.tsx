@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Minus, Plus } from "lucide-react";
 
 import { cn } from "../../lib/utils";
+import { useViewport } from "../../hooks/useViewport";
 
 export interface HoverExpandItem {
   label: string;
@@ -38,34 +39,21 @@ export function HoverExpand({
   className,
 }: HoverExpandProps) {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
-  const [canHover, setCanHover] = React.useState(false);
-  const [viewportHeight, setViewportHeight] = React.useState(() => (
-    typeof window === "undefined" ? 900 : window.innerHeight
-  ));
-  const shortTouchViewport = !canHover && viewportHeight < 720;
+  const [hasFinePointer, setHasFinePointer] = React.useState(false);
+  // Canvas units, so the row heights below stay in the same design space as the
+  // rest of the page instead of tracking raw screen pixels.
+  const { mode, stageHeight } = useViewport();
+  const canHover = mode === "desktop" && hasFinePointer;
+  const shortTouchViewport = !canHover && stageHeight < 720;
   const compactRowHeight = Math.min(collapsedHeight, shortTouchViewport ? 52 : 60);
   const compactExpandedHeight = Math.min(expandedHeight, shortTouchViewport ? 224 : 258);
 
   React.useEffect(() => {
-    const media = window.matchMedia("(min-width: 768px) and (hover: hover) and (pointer: fine)");
-    const update = () => setCanHover(media.matches);
+    const media = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => setHasFinePointer(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
-
-  React.useEffect(() => {
-    let frame = 0;
-    const updateHeight = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => setViewportHeight(window.innerHeight));
-    };
-
-    window.addEventListener("resize", updateHeight, { passive: true });
-    return () => {
-      window.removeEventListener("resize", updateHeight);
-      window.cancelAnimationFrame(frame);
-    };
   }, []);
 
   const rowHeight = canHover ? collapsedHeight : compactRowHeight;
@@ -76,7 +64,7 @@ export function HoverExpand({
 
   return (
     <motion.div
-      className={cn("relative w-full overflow-hidden font-body [overflow-anchor:none]", className)}
+      className={cn("relative w-full overflow-hidden font-heading [overflow-anchor:none]", className)}
       initial={false}
       animate={{ height: totalHeight }}
       transition={{ type: "spring", stiffness: 250, damping: 32, mass: 0.9 }}
@@ -171,7 +159,7 @@ export function HoverExpand({
                   </motion.span>
 
                   <motion.span
-                    className="min-w-0 text-[clamp(1.05rem,4.6vw,2.15rem)] font-semibold leading-[1.02] tracking-normal"
+                    className="min-w-0 text-[clamp(1.05rem,calc(4.6*var(--vw)),2.15rem)] font-semibold leading-[1.02] tracking-normal"
                     animate={{
                       color: isActive ? "#ffffff" : "currentColor",
                     }}

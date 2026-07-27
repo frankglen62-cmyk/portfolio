@@ -23,8 +23,10 @@ export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="footer" className="mobile-safe-footer relative overflow-hidden border-t border-white/8 bg-black pt-12 pb-28 text-white md:py-16">
-      <ScrollReveal className="mx-auto max-w-6xl px-6 md:px-10">
+    <footer id="footer" className="mobile-safe-footer relative overflow-hidden bg-black pt-12 pb-28 text-white md:py-16">
+      {/* Gradient transition from previous section (#0c0c0c to black) */}
+      <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-[#0c0c0c] to-black pointer-events-none z-0" />
+      <ScrollReveal className="relative z-10 mx-auto max-w-6xl px-6 md:px-10">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.8fr_0.9fr] md:gap-16">
           <div>
             <a href="#home" className="font-serif-display text-3xl font-semibold leading-none tracking-normal text-white">

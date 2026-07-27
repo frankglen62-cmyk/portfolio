@@ -96,9 +96,9 @@ const ScrollLinkedCard: React.FC<{
         zIndex: index, // HIGHER index means it renders ON TOP of previous cards!
         transformOrigin: 'top center',
       }}
-      className="absolute left-1/2 top-[58%] w-[90vw] max-w-[500px] overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:top-[60%] md:max-w-3xl"
+      className="absolute left-1/2 top-[58%] w-[calc(90*var(--vw))] max-w-[500px] overflow-hidden rounded-lg border border-white/10 bg-[#1a1a1a] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:top-[60%] md:max-w-3xl"
     >
-      <div className="flex aspect-[4/5] md:aspect-[16/10] w-full flex-col relative overflow-hidden h-full max-h-[70vh]">
+      <div className="flex aspect-[4/5] md:aspect-[16/10] w-full flex-col relative overflow-hidden h-full max-h-[calc(70*var(--vh))]">
          <img
            src={service.image}
            alt={service.alt}
@@ -146,6 +146,7 @@ export const Services: React.FC = () => {
   // We add a small buffer at the start (0.1) so the first card doesn't fly away instantly
   // when the user arrives at the section. We also add a buffer at the end (0.9).
   const currentIndex = useTransform(
+
     smoothProgress, 
     [0, 0.1, 0.9, 1], 
     [0, 0, services.length - 1, services.length - 1]
@@ -155,10 +156,13 @@ export const Services: React.FC = () => {
     <section
       id="services"
       ref={sectionRef}
-      className="relative z-10 bg-[#0c0c0c]"
-      style={{ height: `${services.length * 90}vh` }} // Taller container to account for the buffers
+      className="relative z-10 bg-black"
+      // Canvas-space viewport heights — raw `vh` would be scaled twice by the
+      // stage zoom and make the scroll track the wrong length.
+      style={{ height: `calc(${services.length * 90} * var(--vh))` }}
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+
+      <div className="sticky top-0 h-[calc(100*var(--vh))] w-full overflow-hidden">
         
         {/* Header - Positioned naturally in the flex flow so it never overlaps the cards */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-[100] w-full pt-8 md:pt-12">
@@ -166,7 +170,7 @@ export const Services: React.FC = () => {
             <span className="mb-2 block font-ui text-[10px] font-semibold uppercase tracking-[0.25em] text-yellow md:mb-3 md:text-[11px]">
               How I Help
             </span>
-            <h2 className="font-serif-display text-[clamp(2.35rem,5vw,4.5rem)] font-bold leading-none tracking-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.8)]">
+            <h2 className="font-serif-display text-[clamp(2.35rem,calc(5*var(--vw)),4.5rem)] font-bold leading-none tracking-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.8)]">
               My Services
             </h2>
           </ScrollReveal>

@@ -45,8 +45,10 @@ export const Contact: React.FC = () => {
   };
 
   return (
-    <section id="contact" ref={sectionRef} className="overflow-hidden bg-[#0c0c0c] py-16 text-white md:py-24">
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-6 md:px-10 lg:grid-cols-[0.72fr_1.55fr] lg:gap-14">
+    <section id="contact" ref={sectionRef} className="relative overflow-hidden bg-[#0c0c0c] py-16 text-white md:py-24">
+      {/* Gradient transition from previous section (black to #0c0c0c) */}
+      <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black to-[#0c0c0c] pointer-events-none z-0" />
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 gap-12 px-6 md:px-10 lg:grid-cols-[0.72fr_1.55fr] lg:gap-14">
         <ScrollReveal delay={0.05} className="flex flex-col justify-between">
           <div>
             <p className="mb-7 font-ui text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82">
@@ -106,7 +108,7 @@ export const Contact: React.FC = () => {
         <ScrollReveal delay={0.12} className="relative overflow-hidden rounded-lg border border-white/8 bg-[#141414] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.32)] sm:p-8 md:p-10">
           <Sparkles className="absolute right-7 top-7 h-8 w-8 text-white/34" strokeWidth={1.1} />
 
-          <h2 className="mb-8 pr-12 font-body text-[clamp(2rem,4.5vw,3.5rem)] font-medium leading-none tracking-normal text-white">
+          <h2 className="mb-8 pr-12 font-heading text-[clamp(2rem,calc(4.5*var(--vw)),3.5rem)] font-semibold leading-none tracking-[-0.025em] text-white">
             Let&apos;s work <span className="text-yellow">together.</span>
           </h2>
 

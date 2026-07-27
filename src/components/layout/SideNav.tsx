@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useIsMobileCanvas } from '../../hooks/useViewport';
 
 const navItems = [
   { id: 'home', label: 'INTRO', num: '00' },
@@ -18,18 +19,8 @@ interface SideNavProps {
 export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [isHovered, setIsHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => (
-    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
-  ));
+  const isMobile = useIsMobileCanvas();
   const observerRef = useRef<IntersectionObserver | null>(null);
-
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 809px)');
-    const sync = (event: MediaQueryListEvent) => setIsMobile(event.matches);
-
-    query.addEventListener('change', sync);
-    return () => query.removeEventListener('change', sync);
-  }, []);
 
   useEffect(() => {
     // Set up intersection observer to highlight active section
@@ -101,22 +92,28 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, x: -20, scale: 0.95 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: -20, scale: 0.95 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+          onAnimationComplete={() => {
+            if (!isVisible) {
+              setIsHovered(false);
+            }
+          }}
           className="mobile-side-nav fixed bottom-3 left-1/2 z-[60] -translate-x-1/2 md:bottom-auto md:left-8 md:top-1/2 md:-translate-x-0 md:-translate-y-1/2"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
           <motion.div 
             layout
-            className="relative flex flex-row items-center gap-1 px-3 py-2 max-[360px]:gap-0 max-[360px]:px-2 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden md:flex-col md:items-stretch md:gap-0 md:px-3 md:py-6"
+            initial={false}
+            className="relative flex flex-row items-center gap-0.5 px-2.5 py-1.5 bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_15px_40px_rgba(0,0,0,0.06)] overflow-hidden md:flex-col md:items-stretch md:gap-0 md:px-2.5 md:py-3.5"
             role="navigation"
             aria-label="Section navigation"
             animate={{
-              width: isMobile ? 'auto' : isHovered ? [44, 280, 220] : 44,
-              borderRadius: isMobile ? 999 : isHovered ? [30, 140, 30] : 30,
+              width: isMobile ? 'auto' : isHovered ? [40, 258, 206] : 40,
+              borderRadius: isMobile ? 999 : isHovered ? [26, 130, 26] : 26,
             }}
             transition={{
               duration: 0.75,
@@ -134,7 +131,7 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
                   onClick={(e) => handleClick(e, item.id)}
                   aria-label={`Go to ${item.label.toLowerCase()}`}
                   aria-current={isActive ? 'page' : undefined}
-                  className="group relative z-10 flex h-10 w-9 items-center justify-center outline-none max-[360px]:w-8 md:my-[2px] md:h-auto md:w-full md:justify-start md:py-2"
+                  className="group relative z-10 flex h-9 w-8 items-center justify-center outline-none md:my-px md:h-auto md:w-full md:justify-start md:py-1.5"
                 >
                   {/* Subtle Active Pill Background (Reference Style) */}
                   <motion.div
@@ -149,7 +146,7 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
                   {/* Number - Fixed Width Container to keep aligned when thin */}
                   <div className="min-w-[20px] flex justify-center flex-shrink-0 z-10">
                     <span
-                      style={{ fontFamily: '"Archivo", sans-serif', fontSize: '10.5px', letterSpacing: '2.31px' }}
+                      style={{ fontFamily: '"Archivo", sans-serif', fontSize: '9.5px', letterSpacing: '2px' }}
                       className={`transition-all duration-300 font-normal ${
                         isActive ? 'text-dark group-hover:font-bold' : 'text-dark/40 group-hover:text-dark/80 group-hover:font-bold'
                       }`}
@@ -172,7 +169,7 @@ export const SideNav: React.FC<SideNavProps> = ({ isVisible }) => {
                     
                     {/* Title */}
                     <span
-                      style={{ fontFamily: '"Archivo", sans-serif', fontSize: '10.5px', letterSpacing: '2.31px' }}
+                      style={{ fontFamily: '"Archivo", sans-serif', fontSize: '9.5px', letterSpacing: '2px' }}
                       className={`uppercase transition-all duration-300 origin-left font-normal ${
                         isActive ? 'text-dark group-hover:font-bold' : 'text-dark/40 group-hover:text-dark/80 group-hover:font-bold'
                       }`}

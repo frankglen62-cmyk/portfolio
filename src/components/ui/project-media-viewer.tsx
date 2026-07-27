@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from 'lucide-react';
+import { useViewport } from '../../hooks/useViewport';
 
 export interface ProjectMedia {
   id: string;
@@ -33,8 +34,14 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
   onClose,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [waitingForPlay, setWaitingForPlay] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  // The viewer renders inside the design canvas, so it must measure itself in
+  // canvas units — otherwise the media would be sized against raw screen pixels
+  // and end up a different size on every monitor.
+  const canvas = useViewport();
+  const viewportSize = { width: canvas.designWidth, height: canvas.stageHeight };
   const activeIndexRef = useRef(0);
   const closeTimerRef = useRef<number | null>(null);
   const closingRef = useRef(false);
@@ -84,16 +91,24 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
     videoRefs.current.forEach((video, index) => {
       if (!video) return;
       if (index === activeIndex) {
-        video.muted = true;
+        video.muted = isMuted;
         video.preload = 'auto';
 
-        const startPlayback = () => {
+        const startPlayback = async () => {
           if (video.readyState >= 1) video.currentTime = 0;
-          video.play().catch(() => undefined);
+          try {
+            await video.play();
+            setWaitingForPlay(false);
+          } catch {
+            // Browsers can block audible autoplay even after the user opens the viewer.
+            // Keep audio enabled and offer an explicit play action instead of silently
+            // falling back to a muted video.
+            setWaitingForPlay(true);
+          }
         };
 
         if (video.readyState >= 2) {
-          startPlayback();
+          void startPlayback();
         } else {
           video.addEventListener('canplay', startPlayback, { once: true });
           video.load();
@@ -101,12 +116,13 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
       } else {
         video.pause();
         video.muted = true;
-        const rawDistance = Math.abs(index - activeIndex);
-        const carouselDistance = Math.min(rawDistance, project.media.length - rawDistance);
-        video.preload = carouselDistance <= 1 ? 'auto' : 'metadata';
+        video.preload = 'auto';
+        if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) {
+          video.load();
+        }
       }
     });
-  }, [activeIndex, project]);
+  }, [activeIndex, isMuted, project]);
 
   useEffect(() => {
     const activeVideo = videoRefs.current[activeIndex];
@@ -116,11 +132,12 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
   if (typeof document === 'undefined') return null;
 
   const getTargetSize = (media: ProjectMedia) => {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const isMobile = viewportWidth < 640;
-    const availableWidth = viewportWidth - (isMobile ? 64 : 280);
-    const availableHeight = viewportHeight - (isMobile ? 76 : 34);
+    const viewportWidth = viewportSize.width;
+    const viewportHeight = viewportSize.height;
+    const isMobile = canvas.mode === 'mobile';
+    const desktopSideSpace = Math.min(280, Math.max(128, viewportWidth * 0.15));
+    const availableWidth = Math.max(240, viewportWidth - (isMobile ? 28 : desktopSideSpace));
+    const availableHeight = Math.max(300, viewportHeight - 84);
 
     if (media.orientation === 'portrait') {
       let height = Math.max(300, availableHeight);
@@ -144,7 +161,7 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
   const targetSize = project
     ? getTargetSize(project.media[activeIndex])
     : { width: 0, height: 0 };
-  const isMobile = window.innerWidth < 640;
+  const isMobile = canvas.mode === 'mobile';
 
   const getRelativePosition = (index: number) => {
     if (!project) return 0;
@@ -171,6 +188,7 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
 
   const goToIndex = (index: number) => {
     activeIndexRef.current = index;
+    setWaitingForPlay(false);
     setActiveIndex(index);
   };
 
@@ -184,7 +202,9 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
     swipeStartXRef.current = null;
     if (startX === null) return;
 
-    const distance = event.clientX - startX;
+    // Pointer travel is in screen pixels; compare it in canvas units so the
+    // swipe needs the same physical distance at every zoom level.
+    const distance = (event.clientX - startX) / canvas.zoom;
     if (Math.abs(distance) < 44) return;
     if (distance > 0) showPrevious();
     else showNext();
@@ -260,7 +280,7 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
             </button>
 
             <div
-              className="relative"
+              className="relative shrink-0"
               style={{
                 width: targetSize.width,
                 height: targetSize.height,
@@ -305,18 +325,24 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
                           videoRefs.current[index] = element;
                         }}
                         src={media.src}
-                        preload={Math.abs(relativePosition) <= 1 ? 'auto' : 'metadata'}
+                        preload="auto"
                         playsInline
+                        loop
+                        controlsList="nodownload noremoteplayback"
+                        disablePictureInPicture
                         muted={!isActive || isMuted}
                         className="h-full w-full object-cover"
-                        onCanPlay={(event) => {
-                          if (isActive && event.currentTarget.paused) {
-                            event.currentTarget.play().catch(() => undefined);
+                        onContextMenu={(event) => event.preventDefault()}
+                        onLoadedData={(event) => {
+                          if (!isActive && event.currentTarget.currentTime < 0.1) {
+                            event.currentTarget.currentTime = 0.1;
                           }
                         }}
-                        onEnded={(event) => {
-                          if (videoRefs.current[activeIndexRef.current] === event.currentTarget) {
-                            showNext();
+                        onCanPlay={(event) => {
+                          if (isActive && event.currentTarget.paused) {
+                            event.currentTarget.play()
+                              .then(() => setWaitingForPlay(false))
+                              .catch(() => setWaitingForPlay(true));
                           }
                         }}
                       />
@@ -336,22 +362,68 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
                     )}
 
                     {isActive && media.type === 'video' && (
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setIsMuted((current) => !current);
-                        }}
-                        className="absolute right-3 top-3 z-[60] flex h-9 w-9 items-center justify-center rounded-full bg-white/86 text-black/75 shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
-                        aria-label={isMuted ? 'Turn sound on' : 'Mute video'}
-                        title={isMuted ? 'Turn sound on' : 'Mute video'}
-                      >
-                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                      </button>
+                      <>
+                        {waitingForPlay && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              event.currentTarget.parentElement
+                                ?.querySelector('video')
+                                ?.play()
+                                .then(() => setWaitingForPlay(false))
+                                .catch(() => undefined);
+                            }}
+                            className="absolute inset-0 z-[55] flex items-center justify-center bg-black/20"
+                            aria-label="Play video with sound"
+                          >
+                            <span className="rounded-full border border-white/25 bg-black/70 px-5 py-3 font-ui text-xs font-semibold text-white backdrop-blur-md">
+                              Play with sound
+                            </span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setIsMuted((current) => !current);
+                          }}
+                          className="absolute right-3 top-3 z-[60] flex h-9 w-9 items-center justify-center rounded-full bg-white/86 text-black/75 shadow-lg backdrop-blur-sm transition-transform hover:scale-105"
+                          aria-label={isMuted ? 'Turn sound on' : 'Mute video'}
+                          title={isMuted ? 'Turn sound on' : 'Mute video'}
+                        >
+                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        </button>
+                      </>
                     )}
+
                   </motion.div>
                 );
               })}
+
+              {project.media.length > 1 && (
+                <div
+                  className="absolute left-1/2 top-full z-[65] mt-3 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/38 px-2.5 py-2 shadow-lg backdrop-blur-md"
+                  aria-label="Video position"
+                >
+                  {project.media.map((item, paginationIndex) => {
+                    const isCurrent = paginationIndex === activeIndex;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => goToIndex(paginationIndex)}
+                        className={`h-1.5 rounded-full transition-[width,background-color] duration-300 ${
+                          isCurrent ? 'w-4 bg-white' : 'w-1.5 bg-white/38 hover:bg-white/70'
+                        }`}
+                        aria-label={`Open video ${paginationIndex + 1}`}
+                        aria-current={isCurrent ? 'true' : undefined}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <button
@@ -367,6 +439,8 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    // Mounted inside the design canvas so the overlay is scaled exactly like
+    // the page behind it.
+    document.getElementById('viewport-stage') ?? document.body,
   );
 };

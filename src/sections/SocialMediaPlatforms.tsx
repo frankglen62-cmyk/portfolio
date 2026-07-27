@@ -19,17 +19,17 @@ export const SocialMediaPlatforms: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
   return (
-    <section id="social-platforms" ref={sectionRef} className="overflow-hidden bg-[#d8dbdf] pb-12 pt-28 md:pb-16 md:pt-40">
+    <section id="social-platforms" ref={sectionRef} className="overflow-hidden bg-black pb-12 pt-28 md:pb-16 md:pt-40">
       <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-12">
         {/* Section Header */}
         <ScrollReveal className="text-center mb-16 md:mb-20">
-          <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-dark/50 mb-4 block">
+          <span className="font-ui text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50 mb-4 block">
             Platforms I Manage
           </span>
-          <h2 className="font-serif-display text-[clamp(2.2rem,4.5vw,3.8rem)] font-bold text-dark tracking-wide uppercase">
+          <h2 className="font-serif-display text-[clamp(2.2rem,calc(4.5*var(--vw)),3.8rem)] font-bold text-white tracking-wide uppercase">
             Social Media Platforms
           </h2>
-          <div className="w-12 h-[2px] bg-dark/20 mt-5 mx-auto" />
+          <div className="w-12 h-[2px] bg-white/20 mt-5 mx-auto" />
         </ScrollReveal>
 
         {/* Platforms Grid — branded circles (Staggered ScrollReveal) */}
@@ -56,7 +56,7 @@ export const SocialMediaPlatforms: React.FC = () => {
               <div className="w-20 h-20 md:w-[88px] md:h-[88px] flex items-center justify-center transition-all duration-300">
                 <CustomIcon src={`${import.meta.env.BASE_URL}icons/social/${platform.id}`} alt={platform.name} className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-125" />
               </div>
-              <span className="font-ui text-[11px] font-semibold uppercase tracking-wider text-dark/50 transition-colors group-hover:text-dark">
+              <span className="font-ui text-[11px] font-semibold uppercase tracking-wider text-white/50 transition-colors group-hover:text-white">
                 {platform.name}
               </span>
             </PlatformItem>

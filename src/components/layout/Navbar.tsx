@@ -44,14 +44,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
       <header
         data-hero-nav
         aria-hidden={!isVisible}
-        className={`fixed top-0 left-0 right-0 z-50 py-5 bg-transparent text-dark transition-[opacity,transform] duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 py-5 bg-transparent text-white transition-[opacity,transform] duration-300 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
         }`}
       >
         <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-6 md:px-10 lg:px-12">
           <a
             href="#home"
-            className="font-heading italic text-2xl md:text-[26px] text-dark"
+            className="font-heading italic text-2xl md:text-[26px] text-white"
           >
             Frank.
           </a>
@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
               <a
                 key={link.label}
                 href={link.href}
-                className="py-2 font-body text-[14px] font-medium text-dark/70 transition-colors duration-300 hover:text-dark"
+                className="py-2 font-body text-[14px] font-medium text-white/70 transition-colors duration-300 hover:text-white"
               >
                 {link.label}
               </a>
@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
             href="#contact"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.97 }}
-            className="hidden md:inline-flex font-body font-semibold text-[14px] rounded-full px-7 py-2.5 cursor-pointer bg-dark text-white hover:bg-black transition-colors duration-300"
+            className="hidden md:inline-flex font-body font-semibold text-[14px] rounded-full px-7 py-2.5 cursor-pointer bg-white/10 text-white hover:bg-white hover:text-black transition-colors duration-300 border border-white/10"
           >
             Contact
           </motion.a>
@@ -87,21 +87,19 @@ export const Navbar: React.FC<NavbarProps> = ({ isVisible }) => {
           >
             <motion.span
               animate={mobileOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-              className="w-6 h-[2px] block bg-dark"
+              className="w-6 h-[2px] block bg-white"
             />
             <motion.span
               animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }}
-              className="w-6 h-[2px] block bg-dark"
+              className="w-6 h-[2px] block bg-white"
             />
             <motion.span
               animate={mobileOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-              className="w-6 h-[2px] block bg-dark"
+              className="w-6 h-[2px] block bg-white"
             />
           </button>
         </div>
       </header>
-
-      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileOpen && isVisible && (
           <motion.div

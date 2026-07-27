@@ -1,9 +1,14 @@
 import React from 'react';
 import { motion, useDragControls } from 'framer-motion';
-import { useVisualEditor, getFieldsForElement, type FieldDef } from '../../contexts/VisualEditorContext';
+import {
+  useVisualEditor, getFieldsForElement, FALLBACK,
+  type FieldDef,
+} from '../../contexts/VisualEditorContext';
+import { useViewport } from '../../hooks/useViewport';
+import { setForcedCanvas, type CanvasMode } from '../../lib/viewportStage';
 
 /* ═══════════════════════════════════════════
-   SVG ICONS
+   ICONS
    ═══════════════════════════════════════════ */
 const GearIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -12,112 +17,218 @@ const GearIcon = () => (
   </svg>
 );
 const CloseIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
-const MoveIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="5 9 2 12 5 15" /><polyline points="9 5 12 2 15 5" /><polyline points="15 19 12 22 9 19" /><polyline points="19 9 22 12 19 15" />
+const DragGripIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="5 9 2 12 5 15" /><polyline points="9 5 12 2 15 5" />
+    <polyline points="15 19 12 22 9 19" /><polyline points="19 9 22 12 19 15" />
     <line x1="2" y1="12" x2="22" y2="12" /><line x1="12" y1="2" x2="12" y2="22" />
   </svg>
 );
 const SaveIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
   </svg>
 );
 const ResetIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
   </svg>
 );
+const SnapIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <line x1="12" y1="2" x2="12" y2="6" /><line x1="12" y1="18" x2="12" y2="22" />
+    <line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" />
+  </svg>
+);
 
+/* ═══════════════════════════════════════════
+   REFERENCE DIMENSIONS  (must match EditableElement)
+   ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   MOVE HANDLE
+   ─────────────────────────────────────────────
+   On pointerdown it writes into context's dragState
+   ref (active: true).  The context's existing
+   window 'pointermove' listener picks that up and
+   moves the element — no React onPointerMove needed,
+   so setPointerCapture quirks don't matter.
+   ═══════════════════════════════════════════ */
+const DirectionControls: React.FC = () => {
+  const { layout, selectedElement, updateProp } = useVisualEditor();
+  if (!selectedElement || !layout[selectedElement]) return null;
+
+  const nudge = (x: number, y: number) => {
+    const current = layout[selectedElement];
+    updateProp(selectedElement, 'x', current.x + x);
+    updateProp(selectedElement, 'y', current.y + y);
+  };
+  const buttonStyle: React.CSSProperties = {
+    width: '36px', height: '32px', borderRadius: '8px', border: '1px solid rgba(249,115,22,0.3)',
+    background: '#fff7ed', color: '#ea580c', fontSize: '18px', fontWeight: 800, lineHeight: 1, cursor: 'pointer',
+  };
+
+  return (
+    <div style={{ margin: '0 10px 10px', padding: '9px', borderRadius: '10px', background: '#fffaf5', border: '1px solid rgba(249,115,22,0.16)' }}>
+      <p style={{ margin: '0 0 7px', fontSize: '10px', fontWeight: 800, color: '#9a3412', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Move position</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', justifyContent: 'center', gap: '4px' }}>
+        <span />
+        <button type="button" aria-label="Move up" onClick={() => nudge(0, -5)} style={buttonStyle}>↑</button>
+        <span />
+        <button type="button" aria-label="Move left" onClick={() => nudge(-5, 0)} style={buttonStyle}>←</button>
+        <button type="button" aria-label="Move down" onClick={() => nudge(0, 5)} style={buttonStyle}>↓</button>
+        <button type="button" aria-label="Move right" onClick={() => nudge(5, 0)} style={buttonStyle}>→</button>
+      </div>
+    </div>
+  );
+};
+
+const LayerControls: React.FC = () => {
+  const { layout, selectedElement, updateProp } = useVisualEditor();
+  if (!selectedElement || !layout[selectedElement]) return null;
+
+  const isInFront = (layout[selectedElement].zIndex ?? 10) >= 50;
+  const setLayer = (zIndex: number) => updateProp(selectedElement, 'zIndex', zIndex);
+  const baseStyle: React.CSSProperties = {
+    flex: 1, padding: '7px 5px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, cursor: 'pointer',
+  };
+
+  return (
+    <div style={{ margin: '0 10px 10px' }}>
+      <p style={{ margin: '0 0 5px', fontSize: '10px', fontWeight: 800, color: '#777', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Layer relative to image</p>
+      <div style={{ display: 'flex', gap: '6px' }}>
+        <button type="button" onClick={() => setLayer(90)} style={{ ...baseStyle, border: isInFront ? '1px solid #f97316' : '1px solid rgba(0,0,0,0.1)', background: isInFront ? '#fff1e5' : '#fff', color: '#c2410c' }}>In Front</button>
+        <button type="button" onClick={() => setLayer(5)} style={{ ...baseStyle, border: !isInFront ? '1px solid #0284c7' : '1px solid rgba(0,0,0,0.1)', background: !isInFront ? '#eff6ff' : '#fff', color: '#0369a1' }}>Behind Image</button>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════
+   MAIN PANEL
+   ═══════════════════════════════════════════ */
 export const VisualEditorPanel: React.FC = () => {
-  const [isMobileViewport, setIsMobileViewport] = React.useState(() => (
-    typeof window !== 'undefined' ? window.matchMedia('(max-width: 809px)').matches : false
-  ));
-  const [viewportSize, setViewportSize] = React.useState(() => ({
-    width: typeof window !== 'undefined' ? window.innerWidth : 0,
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-  }));
+  const viewport = useViewport();
+  const isMobileViewport = viewport.mode === 'mobile';
+  const viewportSize = { width: viewport.screenWidth, height: viewport.screenHeight };
+  const [panelWidth, setPanelWidth] = React.useState(190);
   const dragControls = useDragControls();
   const {
     layout, editMode, setEditMode, setPanelOpen,
     selectedElement, setSelectedElement, updateProp, saveConfig, resetConfig,
-    isSaving, saveStatus, elementLabels, guides
+    isSaving, saveStatus, elementLabels, guides,
   } = useVisualEditor();
 
-  React.useEffect(() => {
-    const query = window.matchMedia('(max-width: 809px)');
-    const sync = () => {
-      setIsMobileViewport(query.matches);
-      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
-    };
+  const switchCanvas = (next: CanvasMode | null) => {
+    setSelectedElement(null);
+    setForcedCanvas(next);
+  };
 
-    sync();
-    query.addEventListener('change', sync);
-    window.addEventListener('resize', sync);
-    return () => {
-      query.removeEventListener('change', sync);
-      window.removeEventListener('resize', sync);
-    };
-  }, []);
-
-  const visibleElementIds = Object.keys(layout).filter((id) => (
+  const visibleElementIds = Object.keys(layout).filter(id =>
     isMobileViewport ? id.endsWith('Mobile') : !id.endsWith('Mobile')
-  ));
-  const panelClassName = isMobileViewport
-    ? 'w-[180px] max-h-[50svh] flex flex-col rounded-xl overflow-hidden shadow-2xl'
-    : 'w-[205px] max-h-[60svh] flex flex-col rounded-lg overflow-hidden shadow-xl';
-  const panelOffset = isMobileViewport ? { left: 10, bottom: 10 } : { left: 16, bottom: 16 };
+  );
 
+  // Panel size & initial position
+  const minPanelWidth = isMobileViewport ? 170 : 220;
+  const maxPanelWidth = isMobileViewport ? Math.max(170, Math.min(280, viewportSize.width - 20)) : 340;
+  const panelW = Math.min(maxPanelWidth, Math.max(minPanelWidth, panelWidth));
+  const panelMaxH = isMobileViewport
+    ? Math.min(viewportSize.height * 0.80, 560)
+    : Math.min(viewportSize.height * 0.84, 640);
+  const margin = 10;
+
+  const panelInitialX = margin;
+  const panelInitialY = viewportSize.height > 0
+    ? viewportSize.height - panelMaxH - margin
+    : 80;
+
+  const dragConstraints = {
+    left:   0,
+    top:    0,
+    right:  Math.max(0, viewportSize.width  - panelW - 4),
+    bottom: Math.max(0, viewportSize.height - panelMaxH - 4),
+  };
+
+  /* ── Snap selected element back to x:0 y:0 ─────────────────────────────── */
+  const snapToNatural = () => {
+    if (!selectedElement) return;
+    updateProp(selectedElement, 'x', 0);
+    updateProp(selectedElement, 'y', 0);
+  };
+
+  /* ── Reset selected element to FALLBACK defaults ────────────────────────── */
+  const resetElement = () => {
+    if (!selectedElement) return;
+    const fallback = FALLBACK[selectedElement];
+    if (!fallback) return;
+    Object.entries(fallback).forEach(([key, val]) =>
+      updateProp(selectedElement, key, val as string | number)
+    );
+  };
+
+  /* ── Field renderer ─────────────────────────────────────────────────────── */
   const renderField = (id: string, field: FieldDef) => {
     const config = layout[id];
     if (!config) return null;
     let val = config[field.key as keyof typeof config];
     if (val === undefined) {
-      if (field.key === 'scale') val = 1;
-      else if (field.key === 'opacity') val = 1;
+      if (field.key === 'scale')    val = 1;
+      else if (field.key === 'opacity')  val = 1;
       else if (field.key === 'rotation') val = 0;
       else return null;
     }
 
     if (field.type === 'color') {
       return (
-        <div key={field.key} className="mb-3">
-          <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-1">
-            {field.label}<span className="text-[10px] text-gray-500 font-mono">{val}</span>
+        <div key={field.key} className="mb-2.5">
+          <label className="flex items-center justify-between text-[11px] font-semibold text-gray-600 mb-1">
+            {field.label}
+            <span className="text-[10px] text-gray-400 font-mono">{val as string}</span>
           </label>
-          <input type="color" value={val} onChange={e => updateProp(id, field.key, e.target.value)}
-            className="w-full h-8 rounded cursor-pointer border border-gray-300 bg-transparent" />
+          <input type="color" value={val as string}
+            onChange={e => updateProp(id, field.key, e.target.value)}
+            className="w-full h-8 rounded cursor-pointer border border-gray-200 bg-transparent" />
         </div>
       );
     }
     if (field.type === 'range') {
+      const numVal = typeof val === 'number' ? val : parseFloat(val as string) || 0;
       return (
-        <div key={field.key} className="mb-3">
-          <label className="flex items-center justify-between text-xs font-medium text-gray-600 mb-1">
-            {field.label}<span className="text-[10px] text-gray-500 font-mono">{val}{field.unit || ''}</span>
+        <div key={field.key} className="mb-2.5">
+          <label className="flex items-center justify-between text-[11px] font-semibold text-gray-600 mb-1">
+            {field.label}
+            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded"
+              style={{ background: '#fff4e8', color: '#f97316' }}>
+              {field.step && field.step < 1 ? numVal.toFixed(2) : Math.round(numVal)}{field.unit || ''}
+            </span>
           </label>
-          <input type="range" min={field.min} max={field.max} step={field.step} value={val}
+          <input type="range" min={field.min} max={field.max} step={field.step}
+            value={numVal}
             onChange={e => updateProp(id, field.key, Number(e.target.value))}
-            className="w-full h-1.5 accent-orange rounded-full cursor-pointer" />
+            className="w-full h-2 rounded-full cursor-pointer"
+            style={{ accentColor: '#f97316' }} />
         </div>
       );
     }
     return (
-      <div key={field.key} className="mb-3">
-        <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
-        <input type="text" value={val} onChange={e => updateProp(id, field.key, e.target.value)}
-          className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-xs text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
+      <div key={field.key} className="mb-2.5">
+        <label className="block text-[11px] font-semibold text-gray-600 mb-1">{field.label}</label>
+        <input type="text" value={val as string}
+          onChange={e => updateProp(id, field.key, e.target.value)}
+          className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-[12px] text-gray-800 font-mono focus:outline-none shadow-sm"
+          style={{ borderColor: 'rgba(0,0,0,0.12)' }} />
       </div>
     );
   };
 
   return (
     <>
-      {/* ═══ ALIGNMENT GUIDE LINES ═══ */}
+      {/* ═══ GUIDE LINES ═══ */}
       {editMode && (guides.horizontal.length > 0 || guides.vertical.length > 0) && (
         <svg className="fixed inset-0 z-[9997] pointer-events-none" width="100%" height="100%">
           {guides.horizontal.map((y, i) => (
@@ -129,82 +240,172 @@ export const VisualEditorPanel: React.FC = () => {
         </svg>
       )}
 
-      {/* ═══ DRAGGABLE FLOATING TOOL ═══ */}
+      {/* ═══ FLOATING PANEL ═══ */}
       <motion.div
         drag
         dragControls={dragControls}
         dragListener={false}
         dragMomentum={false}
-        className="fixed z-[9999] flex flex-col items-start"
-        style={panelOffset}
+        dragElastic={0}
+        dragConstraints={dragConstraints}
+        initial={{ x: panelInitialX, y: panelInitialY }}
+        className="fixed z-[9999] top-0 left-0"
+        data-visual-editor-panel="true"
       >
         {editMode ? (
-          <div 
-            className={panelClassName}
+          <div
             style={{
-              background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(24px)',
-              border: '1px solid rgba(0,0,0,0.1)', color: '#1e1e1e',
+              width: `${panelW}px`,
+              maxHeight: `${panelMaxH}px`,
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
+              background: 'rgba(255,255,255,0.94)',
+              backdropFilter: 'blur(28px)',
+              border: '1px solid rgba(0,0,0,0.07)',
             }}
             onPointerDown={e => e.stopPropagation()}
             onClick={e => e.stopPropagation()}
           >
-            {/* Panel Header (Drag Handle) */}
-            <div 
-              className="px-3 py-2 border-b border-gray-200 shrink-0 cursor-move flex items-center justify-between"
-              style={{ background: 'rgba(255, 255, 255, 0.9)', touchAction: 'none' }}
-              onPointerDown={(e) => dragControls.start(e)}
+            {/* ── Header / panel drag handle ── */}
+            <div
+              className="flex items-center justify-between shrink-0 cursor-move"
+              style={{
+                padding: '10px 12px',
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                background: 'rgba(255,255,255,0.96)',
+                touchAction: 'none',
+              }}
+              onPointerDown={e => dragControls.start(e)}
             >
               <div className="flex items-center gap-2">
-                <MoveIcon />
+                <DragGripIcon />
                 <div>
-                  <h2 className="text-xs font-bold tracking-wide uppercase text-gray-800">Visual Editor</h2>
-                  <p className="text-[9px] font-medium uppercase tracking-wide text-gray-500">
-                    {isMobileViewport ? 'Mobile' : 'Desktop'} {viewportSize.width}x{viewportSize.height}
+                  <h2 style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.08em', color: '#1e1e1e', textTransform: 'uppercase', margin: 0 }}>
+                    Visual Editor
+                  </h2>
+                  <p style={{ fontSize: '9px', fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                    {viewport.designWidth}×{viewport.designHeight} canvas · {Math.round(viewport.zoom * 100)}%
                   </p>
                 </div>
               </div>
-              <button 
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => { setEditMode(false); setPanelOpen(false); setSelectedElement(null); }} 
-                className="text-gray-400 hover:text-gray-800 transition"
-                aria-label="Close visual editor"
-              >
-                <CloseIcon />
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => setPanelWidth(width => Math.max(minPanelWidth, width - 20))} style={{ color: '#777', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '16px', lineHeight: 1 }} aria-label="Make editor narrower">−</button>
+                <button type="button" onPointerDown={e => e.stopPropagation()} onClick={() => setPanelWidth(width => Math.min(maxPanelWidth, width + 20))} style={{ color: '#777', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '16px', lineHeight: 1 }} aria-label="Make editor wider">+</button>
+                <button
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={() => { setEditMode(false); setPanelOpen(false); setSelectedElement(null); }}
+                  style={{ color: '#ccc', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', lineHeight: 1 }}
+                  aria-label="Close editor"
+                >
+                  <CloseIcon />
+                </button>
+              </div>
             </div>
 
-            {/* Actions (Save / Reset) */}
-            <div className="px-3 py-2 border-b border-gray-200 shrink-0 flex gap-2">
-              <button onClick={saveConfig} disabled={isSaving}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-sm"
+            {/* ── Canvas preview switch ── */}
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+              <p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                Preview canvas
+              </p>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {([
+                  { key: null, label: 'Auto' },
+                  { key: 'desktop' as const, label: 'Desktop' },
+                  { key: 'mobile' as const, label: 'Mobile' },
+                ]).map(option => {
+                  const isActive = viewport.forced === option.key;
+                  return (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => switchCanvas(option.key)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: '8px',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        border: isActive ? '1px solid #f97316' : '1px solid rgba(0,0,0,0.1)',
+                        background: isActive ? '#fff1e5' : '#fff',
+                        color: isActive ? '#c2410c' : '#666',
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#999', lineHeight: 1.45 }}>
+                Showing the <strong>{isMobileViewport ? 'mobile' : 'desktop'}</strong> composition at {viewportSize.width}×{viewportSize.height}.
+                Every visitor sees this exact layout, only scaled.
+              </p>
+            </div>
+
+            {/* ── Save / Reset row ── */}
+            <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+              <button
+                onClick={saveConfig}
+                disabled={isSaving}
                 style={{
-                  background: saveStatus === 'success' ? '#16a34a' : saveStatus === 'error' ? '#dc2626' : 'linear-gradient(135deg, #fdb466, #f97316)',
-                  color: 'white',
+                  flex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  fontSize: '11px', fontWeight: 800,
+                  border: 'none', cursor: 'pointer', color: 'white',
+                  background: saveStatus === 'success'
+                    ? '#16a34a'
+                    : 'linear-gradient(135deg, #fdb466, #f97316)',
+                  boxShadow: '0 2px 8px rgba(249,115,22,0.4)',
+                  transition: 'background 0.2s',
                 }}
               >
-                <SaveIcon /> {isSaving ? 'Saving...' : saveStatus === 'success' ? 'Saved!' : saveStatus === 'error' ? 'Error!' : 'Save All'}
+                <SaveIcon />
+                {isSaving ? 'Saving…' : saveStatus === 'success' ? '✓ Saved!' : 'Save All'}
               </button>
-              <button onClick={resetConfig}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-bold bg-gray-100 hover:bg-gray-200 transition text-gray-700 hover:text-gray-900 border border-gray-200"
+              <button
+                onClick={resetConfig}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '8px 10px', borderRadius: '10px',
+                  fontSize: '11px', fontWeight: 700,
+                  border: '1px solid rgba(0,0,0,0.1)', cursor: 'pointer',
+                  background: '#f5f5f5', color: '#555',
+                }}
               >
                 <ResetIcon /> Reset
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {/* Element List */}
-              <div className="px-3 py-2">
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-2">
+            {/* ── Scrollable body ── */}
+            <div style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+
+              {/* Element list */}
+              <div style={{ padding: '10px 12px 6px' }}>
+                <p style={{ fontSize: '9px', fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
                   {isMobileViewport ? 'Mobile Elements' : 'Desktop Elements'}
                 </p>
-                <div className="space-y-1">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   {visibleElementIds.map(id => (
-                    <button key={id} onClick={() => setSelectedElement(id)}
-                      className={`w-full text-left px-2 py-1.5 rounded text-[10px] font-medium transition-all flex items-center gap-2 ${
-                        selectedElement === id
-                          ? 'bg-orange/10 text-orange border border-orange/30 shadow-sm'
-                          : 'text-gray-600 hover:bg-black/5 hover:text-gray-900 border border-transparent'
-                      }`}
+                    <button
+                      key={id}
+                      onClick={() => setSelectedElement(id)}
+                      style={{
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: selectedElement === id ? 700 : 500,
+                        border: selectedElement === id ? '1.5px solid rgba(249,115,22,0.4)' : '1.5px solid transparent',
+                        background: selectedElement === id ? 'rgba(249,115,22,0.08)' : 'transparent',
+                        color: selectedElement === id ? '#f97316' : '#555',
+                        cursor: 'pointer',
+                        transition: 'all 0.12s',
+                      }}
                     >
                       {elementLabels[id] || id}
                     </button>
@@ -212,29 +413,80 @@ export const VisualEditorPanel: React.FC = () => {
                 </div>
               </div>
 
-              {/* Selected Element Properties */}
+              {/* Selected element editor */}
               {selectedElement && layout[selectedElement] && (
-                <div className="px-3 py-2 border-t border-gray-200">
-                  <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-3">
-                    Edit — {elementLabels[selectedElement] || selectedElement}
+                <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '10px' }}>
+
+                  {/* Element name */}
+                  <p style={{ fontSize: '9px', fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 12px 8px' }}>
+                    Editing — {elementLabels[selectedElement] || selectedElement}
                   </p>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
+
+                  {/* ── MOVE HANDLE (primary drag control) ── */}
+                  <DirectionControls />
+                  <LayerControls />
+
+                  {/* Snap & Reset row */}
+                  <div style={{ display: 'flex', gap: '6px', margin: '0 10px 10px' }}>
+                    <button
+                      onClick={snapToNatural}
+                      title="Reset X and Y to 0 — brings element back to its natural CSS position"
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                        padding: '7px 6px', borderRadius: '8px',
+                        fontSize: '10px', fontWeight: 700,
+                        border: '1px solid rgba(0,0,0,0.10)', cursor: 'pointer',
+                        background: '#f0f9ff', color: '#0284c7',
+                      }}
+                    >
+                      <SnapIcon /> Snap Back
+                    </button>
+                    <button
+                      onClick={resetElement}
+                      title="Reset this element to factory defaults"
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                        padding: '7px 6px', borderRadius: '8px',
+                        fontSize: '10px', fontWeight: 700,
+                        border: '1px solid rgba(0,0,0,0.10)', cursor: 'pointer',
+                        background: '#fef2f2', color: '#dc2626',
+                      }}
+                    >
+                      <ResetIcon /> Reset El.
+                    </button>
+                  </div>
+
+                  {/* X / Y inputs */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '0 12px 10px' }}>
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-600 mb-1">X Position</label>
-                      <input type="number" value={layout[selectedElement].x}
+                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>X Pos</label>
+                      <input type="number"
+                        value={layout[selectedElement].x}
                         onChange={e => updateProp(selectedElement, 'x', Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[11px] text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
+                        style={{ width: '100%', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px', padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace', background: 'white', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-600 mb-1">Y Position</label>
-                      <input type="number" value={layout[selectedElement].y}
+                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>Y Pos</label>
+                      <input type="number"
+                        value={layout[selectedElement].y}
                         onChange={e => updateProp(selectedElement, 'y', Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded px-2 py-1 text-[11px] text-gray-800 font-mono focus:outline-none focus:border-orange shadow-sm" />
+                        style={{ width: '100%', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px', padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace', background: 'white', boxSizing: 'border-box' }} />
                     </div>
                   </div>
-                  {getFieldsForElement(selectedElement).map((field) => renderField(selectedElement, field))}
-                  <div className="mt-3 p-2 rounded bg-gray-100 border border-gray-200 text-[9px] text-gray-600 leading-relaxed">
-                    <strong>Tips:</strong> Arrow keys nudge. Shift+Arrow for 10px. Drag on screen to move. Corner handles scale images.
+
+                  {/* Other element fields (scale, fontSize, etc.) */}
+                  <div style={{ padding: '0 12px 12px' }}>
+                    {getFieldsForElement(selectedElement).map(field => renderField(selectedElement, field))}
+                  </div>
+
+                  {/* Tip */}
+                  <div style={{
+                    margin: '0 12px 12px', padding: '8px 10px', borderRadius: '8px',
+                    background: '#fffbf5', border: '1px solid rgba(249,115,22,0.15)',
+                    fontSize: '10px', color: '#92400e', lineHeight: '1.5',
+                  }}>
+                    <strong>Tip:</strong> Use the arrow buttons for precise movement, or drag the selected element directly.
+                    If element disappears, tap <strong>Snap Back</strong> to restore.
                   </div>
                 </div>
               )}
@@ -242,18 +494,18 @@ export const VisualEditorPanel: React.FC = () => {
           </div>
         ) : (
           <button
-            onPointerDown={(e) => dragControls.start(e)}
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditMode(true); setPanelOpen(true);
-            }}
-            className="w-12 h-12 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 cursor-move"
+            onPointerDown={e => dragControls.start(e)}
+            onClick={e => { e.stopPropagation(); setEditMode(true); setPanelOpen(true); }}
             style={{
-              background: 'rgba(30,30,30,0.85)',
-              backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)', color: 'white',
+              width: '48px', height: '48px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(30,30,30,0.88)', backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255,255,255,0.12)', color: 'white',
+              cursor: 'move', boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              transition: 'transform 0.2s',
             }}
-            title="Drag to move, click to edit"
             aria-label="Open visual editor"
+            title="Drag to move, click to edit"
           >
             <GearIcon />
           </button>
