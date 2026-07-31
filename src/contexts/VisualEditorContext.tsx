@@ -22,6 +22,9 @@ export interface ElementConfig {
   zIndex?: number;
 }
 
+/** Where a save actually landed. See saveConfig. */
+export type SaveStatus = 'idle' | 'file' | 'local' | 'error';
+
 export interface LayoutConfig {
   [key: string]: ElementConfig;
 }
@@ -102,7 +105,7 @@ interface VisualEditorContextProps {
   saveConfig: () => Promise<void>;
   resetConfig: () => void;
   isSaving: boolean;
-  saveStatus: 'idle' | 'success' | 'error';
+  saveStatus: SaveStatus;
   configLoaded: boolean;
   elementRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   guides: GuideLines;
@@ -131,7 +134,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [configLoaded, setConfigLoaded] = useState(false);
   const [guides, setGuides] = useState<GuideLines>({ horizontal: [], vertical: [] });
   const [isDragging, setIsDragging] = useState(false);
@@ -195,25 +198,44 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
     loadLayout();
   }, []);
 
+  /**
+   * Two very different outcomes used to both report "Saved!":
+   *
+   *   'file'  — the dev server wrote src/config/layout.json + public/layout.json.
+   *             Permanent: it survives a new browser, another device, a deploy.
+   *   'local' — only this browser's localStorage took it. The layout is right
+   *             here and nowhere else, which is why an edit could look saved and
+   *             then be missing from the phone.
+   *
+   * The panel now says which one happened instead of claiming success either
+   * way, so "nasave ba talaga?" has a visible answer.
+   */
   const saveConfig = async () => {
     setIsSaving(true); setSaveStatus('idle');
-    // Always persist to localStorage first (works on static hosts)
+
+    let storedLocally = true;
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(layout));
-    } catch { /* storage full */ }
+    } catch {
+      storedLocally = false;
+    }
 
+    let storedToFile = false;
     try {
       const res = await fetch('/api/save-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(layout),
       });
-      setSaveStatus(res.ok ? 'success' : 'success'); // localStorage already succeeded
+      // A static host answers 404/405 here, and index.html for unknown paths —
+      // so require a real JSON acknowledgement, not merely an OK status.
+      storedToFile = res.ok && (await res.json().catch(() => null))?.success === true;
     } catch {
-      // API unavailable is fine — localStorage saved successfully
+      /* no dev server reachable — localStorage is all we have */
     }
-    setSaveStatus('success');
-    setTimeout(() => setSaveStatus('idle'), 2500);
+
+    setSaveStatus(storedToFile ? 'file' : storedLocally ? 'local' : 'error');
+    setTimeout(() => setSaveStatus('idle'), 5000);
     setIsSaving(false);
   };
 

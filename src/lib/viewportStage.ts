@@ -67,24 +67,38 @@ export const CANVAS: Record<CanvasMode, {
    */
   maxFill: number;
   /**
-   * The band, measured up from the BOTTOM of the canvas, that every device is
-   * guaranteed to show. The canvas is bottom-anchored, so a device shorter than
-   * the canvas simply cuts the top off — and how much it cuts depends on the
-   * device. Design inside this band and the composition is identical
-   * everywhere; put something above it and only tall devices will see it.
+   * How far a `.canvas-box` may be scaled DOWN so a viewport SHORTER than the
+   * canvas can still show all of it. Cropping the top is the alternative, and
+   * on a phone that is what hid the hero title behind the portrait.
    *
-   * mobile 632 — a phone's viewport at 372 CSS px wide, after the browser's own
-   * chrome, runs from about 632 (older 16:9 handsets) to about 744 (20:9). The
-   * measured reference is Frank's own phone at 701. 632 is the floor, so it is
-   * what "every phone" means.
+   * Shrinking costs nothing but a little width: the box narrows toward its
+   * bottom centre and the hero's own full-bleed background fills the sliver on
+   * each side, so the composition simply renders a few per cent smaller —
+   * complete, and identical to every other device.
+   *
+   *   mobile  0.6 → a handset runs 632…744 tall against an 832 canvas, i.e.
+   *                 0.76…0.89, so every phone lands inside this and sees the
+   *                 WHOLE canvas. That is the guarantee Frank asked for.
+   *   desktop 0.8 → only reached by a window wider than 2.6:1.
+   */
+  minFill: number;
+  /**
+   * The band, measured up from the BOTTOM of the canvas, that every device is
+   * guaranteed to show — i.e. what survives once `minFill` and `maxFill` have
+   * done what they can. Design inside it and the composition is identical
+   * everywhere; put something above it and only some devices will see it.
+   *
+   * mobile 832 — the WHOLE canvas. A phone's viewport at 372 CSS px wide runs
+   * about 632…744 tall, all of which is inside `minFill`, so every phone scales
+   * the complete composition to fit rather than cutting anything off.
    *
    * desktop 919 — the whole canvas. A desktop window shorter than the canvas is
    * rare, and the overscan (maxFill) already covers the taller direction.
    */
   safeHeight: number;
 }> = {
-  desktop: { width: 1920, height: 919, maxFill: 1.12, safeHeight: 919 },
-  mobile: { width: 372, height: 832, maxFill: 1, safeHeight: 632 },
+  desktop: { width: 1920, height: 919, minFill: 0.8, maxFill: 1.12, safeHeight: 919 },
+  mobile: { width: 372, height: 832, minFill: 0.6, maxFill: 1, safeHeight: 832 },
 };
 
 /**
@@ -264,10 +278,13 @@ const computeState = (): ViewportState => {
     ? emulatedHeight
     : Math.round((screenHeight / zoom) * 100) / 100;
 
-  // Fill a taller-than-canvas window by scaling the composition up rather than
-  // padding it with empty background — capped so the side content survives.
+  // Match the composition to the height it actually has: scale UP to cover a
+  // taller viewport, DOWN to fit a shorter one. Between minFill and maxFill the
+  // whole canvas is visible on every device — the same picture, only smaller or
+  // larger. Outside them the excess is cropped off the top (too tall) or the
+  // sides (too wide), which is what the editor's safe band reports.
   const heroFill = Math.round(
-    Math.min(design.maxFill, Math.max(1, stageHeight / design.height)) * 10000,
+    Math.min(design.maxFill, Math.max(design.minFill, stageHeight / design.height)) * 10000,
   ) / 10000;
 
   return {

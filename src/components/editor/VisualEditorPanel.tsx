@@ -297,9 +297,13 @@ const PovReadout: React.FC = () => {
     ['Canvas', `${designWidth} × ${designHeight}`],
     ['Window', `${screenWidth} × ${screenHeight}`],
     ['Scale', `${(zoom * 100).toFixed(1)}%`],
-    ['Hero fill', heroFill > 1 ? `${heroFill.toFixed(3)}× (−${sideCrop}px/side)` : 'none'],
+    ['Canvas fit', heroFill === 1
+      ? 'exact'
+      : heroFill > 1
+        ? `${heroFill.toFixed(3)}× cover (−${sideCrop}px/side)`
+        : `${heroFill.toFixed(3)}× fit`],
     ['Window height', `${Math.round(stageHeight)} design px`],
-    ['Safe band', `bottom ${safeHeight} of ${designHeight}`],
+    ['Safe band', safeHeight >= designHeight ? 'whole canvas' : `bottom ${safeHeight} of ${designHeight}`],
   ];
 
   const status = !measured
@@ -310,7 +314,14 @@ const PovReadout: React.FC = () => {
         text: `An element reaches ${aboveSafe}px above the safe band. Only the tallest devices show it — on a short phone it is cut off. Turn on the Canvas overlay and drag it below the green line.`,
       }
       : isPreview
-        ? { tone: '#0369a1', bg: '#eff6ff', text: `Emulating the ${mode} canvas — this device is really ${nativeMode}. What fits the safe band fits every device.` }
+        ? {
+          tone: '#0369a1', bg: '#eff6ff',
+          text: `Emulating the ${mode} canvas — this device is really ${nativeMode}. ${
+            heroFill < 1
+              ? `A phone this tall scales the whole canvas to ${Math.round(heroFill * 100)}%; nothing is cut.`
+              : 'Every device shows this exact composition.'
+          }`,
+        }
         : overflow
           ? {
             tone: '#b91c1c', bg: '#fef2f2',
@@ -320,7 +331,9 @@ const PovReadout: React.FC = () => {
             ? { tone: '#a16207', bg: '#fefce8', text: `The top ${topCrop}px of the canvas is off-screen here — everything that matters is inside the safe band, so this is background only.` }
             : spare > 0
               ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
-              : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone${sideCrop ? `, ${sideCrop}px of background cropped per side` : ''}.` };
+              : heroFill < 1
+                ? { tone: '#15803d', bg: '#f0fdf4', text: `POV locked. The whole canvas fits at ${Math.round(heroFill * 100)}% — nothing cut, and every device sees this exact composition.` }
+                : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone${sideCrop ? `, ${sideCrop}px of background cropped per side` : ''}.` };
 
   return (
     <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
@@ -671,9 +684,9 @@ export const VisualEditorPanel: React.FC = () => {
                     ))}
                   </div>
                   <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#999', lineHeight: 1.45 }}>
-                    Phones show {CANVAS.mobile.safeHeight}–744 of the {CANVAS.mobile.height}px canvas,
-                    measured up from the bottom. Keep everything below the green line and every
-                    phone shows the same thing.
+                    Every phone shows the whole {CANVAS.mobile.width}×{CANVAS.mobile.height} canvas —
+                    a shorter one just scales it down to fit. These presets only change that scale,
+                    never where anything sits.
                   </p>
                 </>
               )}
@@ -703,7 +716,8 @@ export const VisualEditorPanel: React.FC = () => {
             </div>
 
             {/* ── Save / Reset row ── */}
-            <div style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={saveConfig}
                 disabled={isSaving}
@@ -714,15 +728,27 @@ export const VisualEditorPanel: React.FC = () => {
                   borderRadius: '10px',
                   fontSize: '11px', fontWeight: 800,
                   border: 'none', cursor: 'pointer', color: 'white',
-                  background: saveStatus === 'success'
+                  background: saveStatus === 'file'
                     ? '#16a34a'
-                    : 'linear-gradient(135deg, #fdb466, #f97316)',
+                    : saveStatus === 'local'
+                      ? '#0284c7'
+                      : saveStatus === 'error'
+                        ? '#dc2626'
+                        : 'linear-gradient(135deg, #fdb466, #f97316)',
                   boxShadow: '0 2px 8px rgba(249,115,22,0.4)',
                   transition: 'background 0.2s',
                 }}
               >
                 <SaveIcon />
-                {isSaving ? 'Saving…' : saveStatus === 'success' ? '✓ Saved!' : 'Save All'}
+                {isSaving
+                  ? 'Saving…'
+                  : saveStatus === 'file'
+                    ? '✓ Saved to file'
+                    : saveStatus === 'local'
+                      ? 'Saved here only'
+                      : saveStatus === 'error'
+                        ? 'Save failed'
+                        : 'Save All'}
               </button>
               <button
                 onClick={resetConfig}
@@ -736,6 +762,26 @@ export const VisualEditorPanel: React.FC = () => {
               >
                 <ResetIcon /> Reset
               </button>
+              </div>
+
+              {/* "Nasave ba talaga?" — an honest answer, not a green tick either way. */}
+              {saveStatus === 'local' && (
+                <p style={{ margin: '7px 0 0', padding: '6px 8px', borderRadius: '7px', background: '#eff6ff', color: '#0369a1', fontSize: '9.5px', fontWeight: 600, lineHeight: 1.45 }}>
+                  Stored in this browser only — no dev server to write layout.json.
+                  Other devices and a fresh deploy will not have it. Re-save from
+                  <strong> npm run dev</strong> to make it permanent.
+                </p>
+              )}
+              {saveStatus === 'file' && (
+                <p style={{ margin: '7px 0 0', padding: '6px 8px', borderRadius: '7px', background: '#f0fdf4', color: '#15803d', fontSize: '9.5px', fontWeight: 600, lineHeight: 1.45 }}>
+                  Written to layout.json — permanent, and every device gets it.
+                </p>
+              )}
+              {saveStatus === 'error' && (
+                <p style={{ margin: '7px 0 0', padding: '6px 8px', borderRadius: '7px', background: '#fef2f2', color: '#b91c1c', fontSize: '9.5px', fontWeight: 600, lineHeight: 1.45 }}>
+                  Nothing was stored. Browser storage is blocked (private mode?).
+                </p>
+              )}
             </div>
 
             {/* ── Scrollable body ── */}

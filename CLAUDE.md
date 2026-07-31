@@ -83,30 +83,53 @@ in green and the POV readout turns red naming the element's overhang. Mobile
 uses `maxFill: 1` — phone margins are ~15px and a phone viewport is almost
 always shorter than the 832 canvas anyway.
 
-### The safe band — what "every device" actually means
+### Fitting a shorter viewport — how mobile stays identical
 
-A device shorter than the canvas simply cuts the top off, and how much it cuts
-depends on the device. `CANVAS[…].safeHeight` is the band, measured **up from
-the bottom**, that every device is guaranteed to show:
+`--hero-fill` runs **both ways**, between `minFill` and `maxFill`:
 
-| Canvas  | Safe band | Range devices actually show |
-| ------- | --------- | --------------------------- |
-| mobile  | 632 of 832 | 632 (16:9 handset) … 744 (20:9); Frank's phone is 701 |
-| desktop | 919 (all)  | the overscan covers the taller direction |
+- viewport taller than the canvas → scale **up** to cover, crop the sides
+- viewport shorter than the canvas → scale **down** to fit, keep everything
 
-**Design inside the band and the composition is identical on every device.**
-Above it, only tall devices see anything. The editor draws the boundary as a
-green dashed line with a red tint above it (Canvas overlay), and the POV
-readout turns red naming how far an element pokes out.
+A phone at 372 CSS px wide has 632…744 px of height against an 832 canvas —
+0.76…0.89, all inside `minFill: 0.6`. So **every phone scales the whole
+composition to fit and nothing is ever cut**. The box narrows toward its bottom
+centre and the hero's full-bleed background covers the sliver at each side.
 
-The mobile preview emulates a real handset — Short / Common / Tall in the panel,
-defaulting to **Short**, because what fits there fits everything. It must never
-be set to the canvas's own 372×832: no phone is that shape, and pretending
-otherwise showed 131 design px of hero in the editor that Frank's phone cuts.
-That single wrong assumption is why his phone and his edits disagreed.
+Measured across the three presets, every element keeps identical canvas
+coordinates and `designHeight - stageHeight / heroFill` is 0 on all of them —
+the entire canvas, on every handset, at three different scales.
 
-`characterImage` is exempt from both checks (`BLEED_IDS`) — it is scaled far
+That is why cropping the top was wrong: the portrait is 749 design px tall and
+bottom-anchored, so on a 701 phone it filled the screen and hid the hero title
+behind it (z-index 10 against the portrait's 20), while an 832 preview left
+83 px of sky where the title showed.
+
+`CANVAS[…].safeHeight` is what survives once both limits have done their work —
+832 (everything) on mobile, 919 on desktop. If it is ever less than the canvas
+height, the editor draws the boundary as a green dashed line with a red tint
+above it and the POV readout names how far an element pokes out.
+
+The mobile preview emulates a real handset — Short / Common / Tall (632 / 701 /
+744) in the panel, defaulting to **Short**. It must never be set to the
+canvas's own 372×832: no phone is that shape, and pretending otherwise showed
+131 design px of hero in the editor that Frank's phone cuts. That single wrong
+assumption is why his phone and his edits disagreed.
+
+`characterImage` is exempt from the crop checks (`BLEED_IDS`) — it is scaled far
 past the frame on purpose.
+
+### Does an edit actually persist?
+
+`saveConfig` reports **where** it landed, because the two outcomes look the same
+otherwise and only one is permanent:
+
+- **Saved to file** (green) — the dev server wrote `src/config/layout.json` and
+  `public/layout.json`. Survives a new browser, another device, a deploy.
+- **Saved here only** (blue) — no dev server answered, so the layout reached
+  this browser's `localStorage` and nowhere else. This is what happens when the
+  editor is used against `vite preview` or a static host, e.g. from a phone.
+
+Make edits permanent from `npm run dev`.
 
 ### Consequences to expect
 
