@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getRenderScale } from '../lib/viewportStage';
+import savedLayout from '../config/layout.json';
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -89,6 +90,34 @@ export const FALLBACK: LayoutConfig = {
   aboutTitleMobile: { x: 0, y: 0, fontSize: 'clamp(2.45rem,11vw,2.75rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: '0.92', opacity: 1, color: '#e0e0e0', rotation: 0 },
 };
 
+/**
+ * The layout Frank actually saved, compiled into the bundle rather than fetched.
+ * `src/config/layout.json` is written by the dev-server plugin on every save and
+ * committed, so a deployed build already knows the final coordinates and can
+ * paint them on the first frame. See loadLayout below.
+ */
+export const SAVED_LAYOUT: LayoutConfig = { ...FALLBACK, ...(savedLayout as LayoutConfig) };
+
+const LS_KEY = 'frankportfolio-layout-v2';
+
+/**
+ * The layout to render on the very first frame — no await anywhere.
+ *
+ * A deployed build used to spend two serial round trips getting here:
+ * /api/layout-config (which a static host answers with index.html, status 200,
+ * so it only fails at JSON.parse) and then /layout.json. Every hero element sat
+ * at the fallback coordinates until they landed and then jumped. The file only
+ * ever changes by a deploy, so it is compiled in instead.
+ */
+function initialLayout(): LayoutConfig {
+  try {
+    // An edit made on this very browser still outranks the built-in layout.
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return { ...SAVED_LAYOUT, ...JSON.parse(raw) };
+  } catch { /* corrupt storage — the built-in layout stands */ }
+  return SAVED_LAYOUT;
+}
+
 /* ═══════════════════════════════════════════
    CONTEXT INTERFACE
    ═══════════════════════════════════════════ */
@@ -129,13 +158,14 @@ export const useVisualEditor = () => {
 };
 
 export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [layout, setLayout] = useState<LayoutConfig>(FALLBACK);
+  const [layout, setLayout] = useState<LayoutConfig>(initialLayout);
   const [editMode, setEditMode] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [configLoaded, setConfigLoaded] = useState(false);
+  // Nothing is fetched before the layout is known, so it is loaded on frame one.
+  const [configLoaded] = useState(true);
   const [guides, setGuides] = useState<GuideLines>({ horizontal: [], vertical: [] });
   const [isDragging, setIsDragging] = useState(false);
   const [elementLabels, setElementLabels] = useState<Record<string, string>>({
@@ -161,41 +191,20 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const dragState = useRef<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>(null);
   const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; zoom?: number; } | null>(null);
 
-  const LS_KEY = 'frankportfolio-layout-v2';
-
+  // The initial layout is already correct (see initialLayout). The dev server is
+  // the one place src/config/layout.json can change without a rebuild, so only
+  // a dev build asks it for a fresher copy — and even then, after the paint.
   useEffect(() => {
-    const loadLayout = async () => {
-      // 1) localStorage — always available, survives page close
-      try {
-        const raw = localStorage.getItem(LS_KEY);
-        if (raw) {
-          setLayout({ ...FALLBACK, ...JSON.parse(raw) });
-          setConfigLoaded(true);
-          return;
-        }
-      } catch { /* corrupt storage — fall through */ }
+    if (!import.meta.env.DEV) return;
+    if (localStorage.getItem(LS_KEY)) return; // a local edit outranks the file
 
-      // 2) Optional backend API
-      try {
-        const apiResponse = await fetch('/api/layout-config');
-        if (!apiResponse.ok) throw new Error('API unavailable');
-        const data = await apiResponse.json();
-        setLayout({ ...FALLBACK, ...data });
-      } catch {
-        // 3) Static JSON bundle fallback
-        try {
-          const staticResponse = await fetch('/layout.json');
-          if (!staticResponse.ok) throw new Error('Static unavailable');
-          const data = await staticResponse.json();
-          setLayout({ ...FALLBACK, ...data });
-        } catch {
-          setLayout(FALLBACK);
-        }
-      } finally {
-        setConfigLoaded(true);
-      }
-    };
-    loadLayout();
+    let cancelled = false;
+    fetch('/api/layout-config')
+      .then(res => (res.ok ? res.json() : Promise.reject(new Error('no dev server'))))
+      .then(data => { if (!cancelled) setLayout({ ...SAVED_LAYOUT, ...data }); })
+      .catch(() => { /* editing against a preview build — the baked layout stands */ });
+
+    return () => { cancelled = true; };
   }, []);
 
   /**

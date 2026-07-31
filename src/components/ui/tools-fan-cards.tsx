@@ -148,6 +148,8 @@ export function ToolsFanCards({ categories }: ToolsFanCardsProps) {
                 alt=""
                 aria-hidden="true"
                 draggable={false}
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 h-full w-full scale-[1.02] object-cover transition-[filter,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                 style={{ objectPosition: category.backgroundPosition }}
               />
@@ -220,6 +222,8 @@ export function ToolsFanCards({ categories }: ToolsFanCardsProps) {
                     src={`${import.meta.env.BASE_URL}icons/tools/${category.tools[0].id}`}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
                     className={`h-6 w-6 object-contain opacity-75 ${
                       lightMonochromeIcons.has(category.tools[0].id) ? 'brightness-0' : ''
                     }`}

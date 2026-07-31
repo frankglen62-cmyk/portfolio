@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { gsap } from 'gsap';
 import { VisualEditorProvider, useVisualEditor } from './contexts/VisualEditorContext';
-import { VisualEditorPanel } from './components/editor/VisualEditorPanel';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Navbar } from './components/layout/Navbar';
 import { SideNav } from './components/layout/SideNav';
@@ -20,6 +19,29 @@ import { useSideNavVisibility } from './hooks/useSideNavVisibility';
 import { subscribeStageRelayout } from './lib/viewportStage';
 
 gsap.registerPlugin(ScrollTrigger);
+
+// The editor is Frank's authoring tool, not part of what a visitor came to see,
+// but it was in the same chunk as the site — so every first-time visitor waited
+// on it before the hero could paint. It is now its own chunk, fetched once the
+// browser has gone idle. The gear button appears a beat later than the page; the
+// page no longer waits for the gear button.
+const VisualEditorPanel = lazy(() =>
+  import('./components/editor/VisualEditorPanel').then(m => ({ default: m.VisualEditorPanel }))
+);
+
+/** True once the page has finished its initial work and can afford a side quest. */
+function useIdle(): boolean {
+  const [idle, setIdle] = useState(false);
+
+  useEffect(() => {
+    const schedule = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const handle = schedule(() => setIdle(true), { timeout: 4000 });
+    return () => cancel(handle as number);
+  }, []);
+
+  return idle;
+}
 
 if (import.meta.env.DEV) {
   // Companion to `__viewportStage`: lets a scroll timeline be inspected and
@@ -66,6 +88,7 @@ const AppContent: React.FC = () => {
   const { editMode, isDragging, setSelectedElement } = useVisualEditor();
   const isHeroIntro = useHeroIntro();
   const isSideNavVisible = useSideNavVisibility();
+  const editorReady = useIdle();
 
   return (
     <div
@@ -78,7 +101,11 @@ const AppContent: React.FC = () => {
     >
       {/* Editor chrome lives OUTSIDE the stage so it stays at true screen size
           and readable no matter how far the page canvas is scaled. */}
-      <VisualEditorPanel />
+      {editorReady && (
+        <Suspense fallback={null}>
+          <VisualEditorPanel />
+        </Suspense>
+      )}
 
       {/* Everything below is laid out on the fixed design canvas. */}
       <div id="viewport-stage" className="viewport-stage">

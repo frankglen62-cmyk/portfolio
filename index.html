@@ -8,9 +8,25 @@
     <title>Frank Glen Martin | Ecommerce Virtual Assistant</title>
     <meta name="description" content="Ecommerce Virtual Assistant specializing in product listings, cross-listing, product research, SEO optimization, inventory updates, order support, product data management, and store operations for eBay, Shopify, Amazon, Poshmark, and other ecommerce platforms." />
     <link rel="preload" as="image" href="%BASE_URL%frank-profile.webp" fetchpriority="high" />
+
+    <!-- Webfonts. Four families, and only the four the stylesheet actually names
+         first in a font stack: Oswald (display), Playfair Display (headings),
+         Instrument Sans (body), Montserrat (UI). Archivo and Inter are listed in
+         the stacks only as fallbacks and are no longer downloaded, and neither
+         are Poppins and JetBrains Mono, which nothing on the page ever used.
+         Weight *ranges* ask Google for one variable file per style instead of a
+         separate file per weight.
+
+         Loaded without blocking the first paint: the sheet is preloaded, then
+         applied via media="print" → "all" on load. With `display=swap` the text
+         is readable immediately either way. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Montserrat:wght@400..700&family=Oswald:wght@400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..700&display=swap" />
+    <link rel="stylesheet" media="print" onload="this.media='all';this.onload=null" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Montserrat:wght@400..700&family=Oswald:wght@400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..700&display=swap" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Montserrat:wght@400..700&family=Oswald:wght@400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..700&display=swap" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

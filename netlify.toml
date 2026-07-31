@@ -26,7 +26,11 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# The saved layout — Frank edits this, so it has to be picked up promptly.
+# The saved layout. The site no longer fetches this at runtime — it is compiled
+# into the bundle (see SAVED_LAYOUT in src/contexts/VisualEditorContext.tsx), so
+# the hero is drawn at its final coordinates on the first frame instead of after
+# two round trips. The file is still published for the dev-server editor flow,
+# and stays uncached so a fetch of it is never a stale one.
 [[headers]]
   for = "/layout.json"
   [headers.values]

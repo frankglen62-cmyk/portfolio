@@ -167,7 +167,9 @@ rendering fault when a screenshot of an unfocused tab comes out black — check
 ## Visual editor (`src/components/editor/`)
 
 Open with the gear button; it lives **outside** the stage so it stays at true
-screen size at any zoom.
+screen size at any zoom. The panel is its own bundle chunk, fetched once the
+browser goes idle, so a visitor never downloads Frank's authoring tool on the
+critical path — the gear appears a beat after the page, which is the point.
 
 - Saved `x` / `y` are **design pixels on the active canvas**, both axes. What
   you set is what everyone gets.
@@ -181,6 +183,11 @@ screen size at any zoom.
 - Arrow keys nudge the selection; Shift = ×5; the step is 1/5/10/25 design px.
 - Save writes to `localStorage`, and to `src/config/layout.json` +
   `public/layout.json` through the dev-server plugin in `vite.config.ts`.
+- **Load** goes the other way and never touches the network in a deployed build:
+  `src/config/layout.json` is imported into the bundle as `SAVED_LAYOUT`, so the
+  hero renders at its final coordinates on the first frame. `localStorage` still
+  wins over it. Only `npm run dev` re-reads the file, through
+  `/api/layout-config`, and only after the paint.
 
 ## Scroll animations
 
@@ -188,6 +195,31 @@ GSAP ScrollTrigger caches pixel measurements. `App.tsx` subscribes to
 `subscribeStageRelayout()` and calls `ScrollTrigger.refresh()` (debounced)
 whenever the stage rescales — without it, resizing the window leaves the About
 panel and other scroll-driven elements stuck at stale progress.
+
+## Load performance
+
+The first visit used to take three serial blocking chains before a single pixel
+appeared. Each one is now closed, and each can be reopened by an innocent-looking
+edit, so:
+
+- **Webfonts belong in `index.html`, never in `@import`.** A CSS `@import` is
+  discovered only after the 87 kB stylesheet has downloaded, and it blocks
+  rendering too: HTML → stylesheet → Google's stylesheet → font files → paint.
+  In the HTML they are found in the first scan. Load only the families a stack
+  names *first* — Archivo and Inter are fallbacks and must not be downloaded —
+  and ask for weight *ranges* (`wght@400..700`) so Google sends one variable file
+  instead of one file per weight.
+- **Never fetch anything the layout needs.** See *Visual editor* above.
+- **The bundle is split** in `vite.config.ts`: react / gsap / motion / vendor,
+  so a change to Frank's own code doesn't re-download 594 kB of libraries. The
+  `chunkSizeWarningLimit` is 300 kB — a warning means something heavy has crept
+  into the entry chunk.
+- **Below the fold means `loading="lazy" decoding="async"`.** Only the hero
+  portrait is `eager` + `fetchPriority="high"`, and it is preloaded from the HTML.
+- **Run `npm run optimize:images` after adding any image.** It re-encodes
+  `public/` to the size things are actually drawn at — tool icons render in an
+  18–24 design-px box, and shipping the 1024 px original costs ~40× the bytes.
+  It is re-runnable and never enlarges or renames a file.
 
 ## Debugging from the console
 

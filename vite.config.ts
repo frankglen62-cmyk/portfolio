@@ -72,4 +72,27 @@ export default defineConfig({
     tailwindcss(),
     layoutConfigPlugin(),
   ],
+  build: {
+    // The whole site used to ship as one 594 kB script, so nothing rendered
+    // until every byte of it — GSAP, framer-motion, the icon set, all nine
+    // sections — had downloaded, parsed and executed. Splitting it lets the
+    // browser start on the hero while the rest streams in, and keeps the three
+    // vendor chunks cached across deploys instead of being re-downloaded
+    // whenever a single line of Frank's own code changes.
+    rollupOptions: {
+      output: {
+        // Rolldown (Vite 8) only takes the function form here.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return;
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+          if (/[\\/]node_modules[\\/]gsap[\\/]/.test(id)) return 'gsap';
+          if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils)[\\/]/.test(id)) return 'motion';
+          return 'vendor';
+        },
+      },
+    },
+    // The vendor split leaves every remaining chunk well under this; a warning
+    // here now means something heavy has crept back into the entry.
+    chunkSizeWarningLimit: 300,
+  },
 });

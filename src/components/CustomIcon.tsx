@@ -20,11 +20,15 @@ export const CustomIcon: React.FC<CustomIconProps> = ({ src, alt, className }) =
   }
 
   return (
-    <img 
-      src={src} 
-      alt={alt} 
-      className={className} 
-      onError={() => setError(true)} 
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      // Every platform logo sits well below the fold; none of them should
+      // compete with the hero for the first connections.
+      loading="lazy"
+      decoding="async"
+      onError={() => setError(true)}
     />
   );
 };
