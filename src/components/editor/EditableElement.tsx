@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useVisualEditor } from '../../contexts/VisualEditorContext';
 import { useViewport } from '../../hooks/useViewport';
+import { getRenderScale } from '../../lib/viewportStage';
 
 interface EditableElementProps {
   id: string;
@@ -8,6 +9,11 @@ interface EditableElementProps {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * Kept for call-site compatibility. It used to opt an element into
+   * window-height-relative placement; the canvas is now fixed in both axes, so
+   * every element is positioned in design pixels and the flag does nothing.
+   */
   responsivePosition?: boolean;
 }
 
@@ -25,11 +31,11 @@ const capturePointer = (event: React.PointerEvent<Element>) => {
 };
 
 export const EditableElement: React.FC<EditableElementProps> = ({
-  id, label, children, className, style, responsivePosition = false,
+  id, label, children, className, style,
 }) => {
   // The saved reference canvas IS the render canvas now, so an X of 120 means
   // 120 design pixels on every screen — the position can no longer drift.
-  const { mode, designHeight } = useViewport();
+  const { mode } = useViewport();
   const isMobileViewport = mode === 'mobile';
   const {
     layout, editMode, selectedElement, setSelectedElement,
@@ -48,15 +54,13 @@ export const EditableElement: React.FC<EditableElementProps> = ({
   const selectionUiScale = 1 / elementScale;
 
   // ─── Coordinate offsets ────────────────────────────────────────────────────
-  // X is a plain design pixel: the canvas width is fixed, so it scales with the
-  // whole page and never lands somewhere else on a different screen.
+  // Both axes are plain DESIGN pixels. The canvas is a fixed box in both
+  // directions now, so an offset of 120 lands on exactly the same spot of the
+  // composition on a 4K monitor, a laptop, a restored-down window and a phone.
+  // (Y used to be re-derived from the real window height, which is precisely
+  // what made the layout drift between screen shapes.)
   const xOffset = `${config.x || 0}px`;
-  // Y stays proportional to the real viewport height (--vh is expressed in
-  // design pixels) so the hero composition keeps its vertical balance on
-  // taller and shorter screens alike.
-  const yOffset = responsivePosition
-    ? `calc(${((config.y || 0) / designHeight) * 100} * var(--vh))`
-    : `${config.y || 0}px`;
+  const yOffset = `${config.y || 0}px`;
 
   const transformStyle = {
     '--editable-x':        xOffset,
@@ -86,6 +90,7 @@ export const EditableElement: React.FC<EditableElementProps> = ({
       id: activeId,
       startY: e.clientY,
       origScale: config.scale || 1,
+      zoom: getRenderScale(e.currentTarget),
     };
   };
 

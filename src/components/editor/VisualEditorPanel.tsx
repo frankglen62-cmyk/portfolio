@@ -5,7 +5,7 @@ import {
   type FieldDef,
 } from '../../contexts/VisualEditorContext';
 import { useViewport } from '../../hooks/useViewport';
-import { setForcedCanvas, type CanvasMode } from '../../lib/viewportStage';
+import { setForcedCanvas, CANVAS, type CanvasMode } from '../../lib/viewportStage';
 
 /* ═══════════════════════════════════════════
    ICONS
@@ -48,25 +48,266 @@ const SnapIcon = () => (
 );
 
 /* ═══════════════════════════════════════════
-   REFERENCE DIMENSIONS  (must match EditableElement)
+   SHARED BITS
    ═══════════════════════════════════════════ */
+const ACCENT = '#f97316';
+
+/**
+ * The slice of the canvas still visible once a hero is overscanned to its cap.
+ * Anything outside gets cropped on a tall window, so it is the line design
+ * elements must stay inside.
+ */
+const cropBounds = (maxFill: number) => ({
+  start: 0.5 - 0.5 / maxFill,
+  end: 0.5 + 0.5 / maxFill,
+});
+
+/**
+ * Design-space bounds of everything the visitor must actually see. Only the
+ * editor-controlled blocks and the About panel count — background layers are
+ * meant to bleed off the edges. Read-only, and always converted back to an
+ * unscaled canvas, so it can never feed back into the scale that produced it.
+ */
+const measureContentBounds = (designWidth: number) => {
+  const box = document.querySelector('.canvas-box');
+  if (!box) return null;
+
+  const boxRect = box.getBoundingClientRect();
+  if (boxRect.width <= 0) return null;
+  const scale = boxRect.width / designWidth;
+
+  let left = Infinity;
+  let right = -Infinity;
+  box.querySelectorAll('[data-editable-id], .hero-about-panel').forEach(el => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    left = Math.min(left, (rect.left - boxRect.left) / scale);
+    right = Math.max(right, (rect.right - boxRect.left) / scale);
+  });
+
+  return Number.isFinite(left) ? { left, right } : null;
+};
+
+
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 800, color: '#b4b4b4', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+    {children}
+  </p>
+);
+
+const SegmentedButton: React.FC<{
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  title?: string;
+}> = ({ active, onClick, children, title }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={title}
+    style={{
+      flex: 1,
+      padding: '6px 4px',
+      borderRadius: '8px',
+      fontSize: '10px',
+      fontWeight: 800,
+      cursor: 'pointer',
+      border: active ? `1px solid ${ACCENT}` : '1px solid rgba(0,0,0,0.1)',
+      background: active ? '#fff1e5' : '#fff',
+      color: active ? '#c2410c' : '#666',
+    }}
+  >
+    {children}
+  </button>
+);
+
 /* ═══════════════════════════════════════════
-   MOVE HANDLE
+   CANVAS OVERLAY
    ─────────────────────────────────────────────
-   On pointerdown it writes into context's dragState
-   ref (active: true).  The context's existing
-   window 'pointermove' listener picks that up and
-   moves the element — no React onPointerMove needed,
-   so setPointerCapture quirks don't matter.
+   Drawn OUTSIDE the zoomed stage, in real screen
+   pixels, from the same numbers the stage uses.
+   It shows where the fixed design canvas actually
+   lands on this window — which is the thing that
+   has to look the same for every visitor.
    ═══════════════════════════════════════════ */
-const DirectionControls: React.FC = () => {
+interface OverlayOptions {
+  bounds: boolean;
+  grid: boolean;
+  centers: boolean;
+}
+
+const CanvasOverlay: React.FC<{ options: OverlayOptions }> = ({ options }) => {
+  const { zoom, heroFill, maxFill, designWidth, designHeight, screenWidth, screenHeight, isPreview } = useViewport();
+  const crop = cropBounds(maxFill);
+  if (!options.bounds && !options.grid && !options.centers) return null;
+
+  // Where `.canvas-box` actually lands: page scale × hero overscan, centred
+  // horizontally (so the crop is symmetrical) and pinned to the bottom of the
+  // first screenful. In preview it starts at the top instead.
+  const boxScale = zoom * heroFill;
+  const stageWidth = designWidth * boxScale;
+  const stageLeft = (screenWidth - stageWidth) / 2;
+  const boxHeight = designHeight * boxScale;
+  const boxTop = isPreview ? 0 : screenHeight - boxHeight;
+
+  const gridStep = 40 * boxScale; // 40 design px
+  const majorEvery = 5;           // …and a brighter line every 200
+
+  const verticals: React.ReactElement[] = [];
+  const horizontals: React.ReactElement[] = [];
+
+  if (options.grid && gridStep > 3) {
+    for (let i = 1, x = stageLeft + gridStep; x < stageLeft + stageWidth; i++, x += gridStep) {
+      verticals.push(
+        <line key={`gv${i}`} x1={x} y1={boxTop} x2={x} y2={boxTop + boxHeight}
+          stroke="#fdb466" strokeWidth={i % majorEvery === 0 ? 0.9 : 0.5}
+          strokeOpacity={i % majorEvery === 0 ? 0.4 : 0.18} />
+      );
+    }
+    for (let i = 1, y = boxTop + gridStep; y < boxTop + boxHeight; i++, y += gridStep) {
+      horizontals.push(
+        <line key={`gh${i}`} x1={stageLeft} y1={y} x2={stageLeft + stageWidth} y2={y}
+          stroke="#fdb466" strokeWidth={i % majorEvery === 0 ? 0.9 : 0.5}
+          strokeOpacity={i % majorEvery === 0 ? 0.4 : 0.18} />
+      );
+    }
+  }
+
+  return (
+    <svg
+      className="fixed inset-0 z-[9996] pointer-events-none"
+      width="100%"
+      height="100%"
+      aria-hidden="true"
+    >
+      {verticals}
+      {horizontals}
+
+      {options.centers && (
+        <>
+          <line x1={stageLeft + stageWidth / 2} y1={0} x2={stageLeft + stageWidth / 2} y2={screenHeight}
+            stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 6" strokeOpacity="0.75" />
+          <line x1={stageLeft} y1={boxTop + boxHeight / 2} x2={stageLeft + stageWidth} y2={boxTop + boxHeight / 2}
+            stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 6" strokeOpacity="0.75" />
+        </>
+      )}
+
+      {options.bounds && (
+        <>
+          <rect x={stageLeft + 0.5} y={boxTop + 0.5} width={Math.max(0, stageWidth - 1)} height={Math.max(0, boxHeight - 1)}
+            fill="none" stroke={ACCENT} strokeWidth="1.5" strokeOpacity="0.85" />
+
+          {/* Crop lines: keep content inside these and the overscan can never
+              cut it, whatever shape the visitor's window is. */}
+          {[crop.start, crop.end].map((fraction, i) => (
+            <line key={`safe${i}`}
+              x1={stageLeft + stageWidth * fraction} y1={boxTop}
+              x2={stageLeft + stageWidth * fraction} y2={boxTop + boxHeight}
+              stroke="#22c55e" strokeWidth="1" strokeDasharray="2 5" strokeOpacity="0.8" />
+          ))}
+
+          {/* Window height the canvas does not define — background only. */}
+          {boxTop > 0 && (
+            <rect x={0} y={0} width={screenWidth} height={boxTop}
+              fill="#38bdf8" fillOpacity="0.07" />
+          )}
+
+          <text x={Math.max(stageLeft, 0) + 8} y={boxTop + 16} fill={ACCENT} fontSize="10" fontWeight="700" fontFamily="monospace">
+            {designWidth}×{designHeight} · {Math.round(zoom * 100)}%
+            {heroFill > 1 ? ` · fill ${heroFill.toFixed(2)}×` : ''}
+          </text>
+        </>
+      )}
+    </svg>
+  );
+};
+
+/* ═══════════════════════════════════════════
+   POV READOUT
+   ─────────────────────────────────────────────
+   The actual debugging surface: what this window
+   is doing to the canvas right now, and whether
+   any of it is not what a visitor would see.
+   ═══════════════════════════════════════════ */
+const PovReadout: React.FC = () => {
+  const {
+    zoom, heroFill, maxFill, designWidth, designHeight, screenWidth, screenHeight,
+    stageHeight, mode, nativeMode, isPreview, measured,
+  } = useViewport();
+
+  // How much of the canvas the overscan pushes past the left/right edges…
+  const sideCrop = Math.round((designWidth * (1 - 1 / heroFill)) / 2);
+  // …how much window height is still left over above the filled canvas…
+  const spare = Math.max(0, Math.round(stageHeight - designHeight * heroFill));
+  // …and the other direction: a short window cuts off the top.
+  const topCrop = Math.max(0, Math.round(designHeight * heroFill - stageHeight));
+
+  // Does any element actually reach past the worst-case crop line? Measured on
+  // every render rather than assumed, so it reacts to a drag as it happens.
+  // (The panel only renders while the editor is open, and GSAP is reverted in
+  // edit mode, so nothing here is caught mid-animation.)
+  const crop = cropBounds(maxFill);
+  const bounds = measureContentBounds(designWidth);
+  const overflowLeft = bounds ? Math.round(designWidth * crop.start - bounds.left) : 0;
+  const overflowRight = bounds ? Math.round(bounds.right - designWidth * crop.end) : 0;
+  const overflow = Math.max(overflowLeft, overflowRight) > 0;
+
+  const rows: [string, string][] = [
+    ['Canvas', `${designWidth} × ${designHeight}`],
+    ['Window', `${screenWidth} × ${screenHeight}`],
+    ['Scale', `${(zoom * 100).toFixed(1)}%`],
+    ['Hero fill', heroFill > 1 ? `${heroFill.toFixed(3)}× (−${sideCrop}px/side)` : 'none'],
+    ['Window height', `${Math.round(stageHeight)} design px`],
+  ];
+
+  const status = !measured
+    ? { tone: '#a16207', bg: '#fefce8', text: 'Measuring the window…' }
+    : isPreview
+      ? { tone: '#0369a1', bg: '#eff6ff', text: `Emulating the ${mode} canvas — this device is really ${nativeMode}.` }
+      : overflow
+        ? {
+          tone: '#b91c1c', bg: '#fef2f2',
+          text: `An element sits ${Math.max(overflowLeft, overflowRight)}px past the ${overflowLeft >= overflowRight ? 'left' : 'right'} crop line. Visitors with taller windows will see it cut — turn on the Canvas overlay and move it inside the green lines.`,
+        }
+        : topCrop > 0
+          ? { tone: '#a16207', bg: '#fefce8', text: `Short window: the top ${topCrop}px of the canvas is off-screen. Only background lives up there.` }
+          : spare > 0
+            ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
+            : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone, ${sideCrop}px of background cropped per side.` };
+
+  return (
+    <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+      <SectionLabel>Point of view</SectionLabel>
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', rowGap: '3px', columnGap: '10px', marginBottom: '8px' }}>
+        {rows.map(([label, value]) => (
+          <React.Fragment key={label}>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#999' }}>{label}</span>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: '#444', fontFamily: 'monospace', textAlign: 'right' }}>{value}</span>
+          </React.Fragment>
+        ))}
+      </div>
+      <p style={{
+        margin: 0, padding: '6px 8px', borderRadius: '7px',
+        background: status.bg, color: status.tone,
+        fontSize: '9.5px', fontWeight: 600, lineHeight: 1.45,
+      }}>
+        {status.text}
+      </p>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════
+   MOVE PAD
+   ═══════════════════════════════════════════ */
+const DirectionControls: React.FC<{ step: number; setStep: (n: number) => void }> = ({ step, setStep }) => {
   const { layout, selectedElement, updateProp } = useVisualEditor();
   if (!selectedElement || !layout[selectedElement]) return null;
 
   const nudge = (x: number, y: number) => {
     const current = layout[selectedElement];
-    updateProp(selectedElement, 'x', current.x + x);
-    updateProp(selectedElement, 'y', current.y + y);
+    if (x) updateProp(selectedElement, 'x', (current.x || 0) + x * step);
+    if (y) updateProp(selectedElement, 'y', (current.y || 0) + y * step);
   };
   const buttonStyle: React.CSSProperties = {
     width: '36px', height: '32px', borderRadius: '8px', border: '1px solid rgba(249,115,22,0.3)',
@@ -75,15 +316,27 @@ const DirectionControls: React.FC = () => {
 
   return (
     <div style={{ margin: '0 10px 10px', padding: '9px', borderRadius: '10px', background: '#fffaf5', border: '1px solid rgba(249,115,22,0.16)' }}>
-      <p style={{ margin: '0 0 7px', fontSize: '10px', fontWeight: 800, color: '#9a3412', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Move position</p>
+      <p style={{ margin: '0 0 7px', fontSize: '10px', fontWeight: 800, color: '#9a3412', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        Move — design px
+      </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', justifyContent: 'center', gap: '4px' }}>
         <span />
-        <button type="button" aria-label="Move up" onClick={() => nudge(0, -5)} style={buttonStyle}>↑</button>
+        <button type="button" aria-label="Move up" onClick={() => nudge(0, -1)} style={buttonStyle}>↑</button>
         <span />
-        <button type="button" aria-label="Move left" onClick={() => nudge(-5, 0)} style={buttonStyle}>←</button>
-        <button type="button" aria-label="Move down" onClick={() => nudge(0, 5)} style={buttonStyle}>↓</button>
-        <button type="button" aria-label="Move right" onClick={() => nudge(5, 0)} style={buttonStyle}>→</button>
+        <button type="button" aria-label="Move left" onClick={() => nudge(-1, 0)} style={buttonStyle}>←</button>
+        <button type="button" aria-label="Move down" onClick={() => nudge(0, 1)} style={buttonStyle}>↓</button>
+        <button type="button" aria-label="Move right" onClick={() => nudge(1, 0)} style={buttonStyle}>→</button>
       </div>
+      <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+        {[1, 5, 10, 25].map(value => (
+          <SegmentedButton key={value} active={step === value} onClick={() => setStep(value)} title={`${value} design pixels per step`}>
+            {value}
+          </SegmentedButton>
+        ))}
+      </div>
+      <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#b0a396', lineHeight: 1.4 }}>
+        Arrow keys nudge too — hold Shift for ×5.
+      </p>
     </div>
   );
 };
@@ -102,7 +355,7 @@ const LayerControls: React.FC = () => {
     <div style={{ margin: '0 10px 10px' }}>
       <p style={{ margin: '0 0 5px', fontSize: '10px', fontWeight: 800, color: '#777', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Layer relative to image</p>
       <div style={{ display: 'flex', gap: '6px' }}>
-        <button type="button" onClick={() => setLayer(90)} style={{ ...baseStyle, border: isInFront ? '1px solid #f97316' : '1px solid rgba(0,0,0,0.1)', background: isInFront ? '#fff1e5' : '#fff', color: '#c2410c' }}>In Front</button>
+        <button type="button" onClick={() => setLayer(90)} style={{ ...baseStyle, border: isInFront ? `1px solid ${ACCENT}` : '1px solid rgba(0,0,0,0.1)', background: isInFront ? '#fff1e5' : '#fff', color: '#c2410c' }}>In Front</button>
         <button type="button" onClick={() => setLayer(5)} style={{ ...baseStyle, border: !isInFront ? '1px solid #0284c7' : '1px solid rgba(0,0,0,0.1)', background: !isInFront ? '#eff6ff' : '#fff', color: '#0369a1' }}>Behind Image</button>
       </div>
     </div>
@@ -117,6 +370,8 @@ export const VisualEditorPanel: React.FC = () => {
   const isMobileViewport = viewport.mode === 'mobile';
   const viewportSize = { width: viewport.screenWidth, height: viewport.screenHeight };
   const [panelWidth, setPanelWidth] = React.useState(190);
+  const [step, setStep] = React.useState(5);
+  const [overlay, setOverlay] = React.useState<OverlayOptions>({ bounds: false, grid: false, centers: false });
   const dragControls = useDragControls();
   const {
     layout, editMode, setEditMode, setPanelOpen,
@@ -132,6 +387,30 @@ export const VisualEditorPanel: React.FC = () => {
   const visibleElementIds = Object.keys(layout).filter(id =>
     isMobileViewport ? id.endsWith('Mobile') : !id.endsWith('Mobile')
   );
+
+  /* ── Keyboard nudging ───────────────────────────────────────────────────── */
+  React.useEffect(() => {
+    if (!editMode || !selectedElement) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      // Never steal the arrow keys from a field the user is typing in.
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+
+      const axis = { ArrowLeft: ['x', -1], ArrowRight: ['x', 1], ArrowUp: ['y', -1], ArrowDown: ['y', 1] }[event.key] as
+        [('x' | 'y'), number] | undefined;
+      if (!axis) return;
+
+      event.preventDefault();
+      const [prop, direction] = axis;
+      const current = layout[selectedElement];
+      if (!current) return;
+      updateProp(selectedElement, prop, (current[prop] || 0) + direction * step * (event.shiftKey ? 5 : 1));
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editMode, selectedElement, layout, step, updateProp]);
 
   // Panel size & initial position
   const minPanelWidth = isMobileViewport ? 170 : 220;
@@ -203,7 +482,7 @@ export const VisualEditorPanel: React.FC = () => {
           <label className="flex items-center justify-between text-[11px] font-semibold text-gray-600 mb-1">
             {field.label}
             <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded"
-              style={{ background: '#fff4e8', color: '#f97316' }}>
+              style={{ background: '#fff4e8', color: ACCENT }}>
               {field.step && field.step < 1 ? numVal.toFixed(2) : Math.round(numVal)}{field.unit || ''}
             </span>
           </label>
@@ -211,7 +490,7 @@ export const VisualEditorPanel: React.FC = () => {
             value={numVal}
             onChange={e => updateProp(id, field.key, Number(e.target.value))}
             className="w-full h-2 rounded-full cursor-pointer"
-            style={{ accentColor: '#f97316' }} />
+            style={{ accentColor: ACCENT }} />
         </div>
       );
     }
@@ -228,6 +507,9 @@ export const VisualEditorPanel: React.FC = () => {
 
   return (
     <>
+      {/* ═══ CANVAS OVERLAY ═══ */}
+      {editMode && <CanvasOverlay options={overlay} />}
+
       {/* ═══ GUIDE LINES ═══ */}
       {editMode && (guides.horizontal.length > 0 || guides.vertical.length > 0) && (
         <svg className="fixed inset-0 z-[9997] pointer-events-none" width="100%" height="100%">
@@ -287,7 +569,7 @@ export const VisualEditorPanel: React.FC = () => {
                     Visual Editor
                   </h2>
                   <p style={{ fontSize: '9px', fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
-                    {viewport.designWidth}×{viewport.designHeight} canvas · {Math.round(viewport.zoom * 100)}%
+                    {viewport.mode} · {viewport.designWidth}×{viewport.designHeight} · {Math.round(viewport.zoom * 100)}%
                   </p>
                 </div>
               </div>
@@ -305,44 +587,48 @@ export const VisualEditorPanel: React.FC = () => {
               </div>
             </div>
 
-            {/* ── Canvas preview switch ── */}
+            {/* ── Canvas switch ── */}
             <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
-              <p style={{ margin: '0 0 6px', fontSize: '9px', fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                Preview canvas
-              </p>
+              <SectionLabel>Edit canvas</SectionLabel>
               <div style={{ display: 'flex', gap: '4px' }}>
                 {([
-                  { key: null, label: 'Auto' },
-                  { key: 'desktop' as const, label: 'Desktop' },
-                  { key: 'mobile' as const, label: 'Mobile' },
-                ]).map(option => {
-                  const isActive = viewport.forced === option.key;
-                  return (
-                    <button
-                      key={option.label}
-                      type="button"
-                      onClick={() => switchCanvas(option.key)}
-                      style={{
-                        flex: 1,
-                        padding: '6px 4px',
-                        borderRadius: '8px',
-                        fontSize: '10px',
-                        fontWeight: 800,
-                        cursor: 'pointer',
-                        border: isActive ? '1px solid #f97316' : '1px solid rgba(0,0,0,0.1)',
-                        background: isActive ? '#fff1e5' : '#fff',
-                        color: isActive ? '#c2410c' : '#666',
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+                  { key: null, label: 'Auto', hint: 'Use whichever canvas this device picks' },
+                  { key: 'desktop' as const, label: 'Desktop', hint: `${CANVAS.desktop.width}×${CANVAS.desktop.height}` },
+                  { key: 'mobile' as const, label: 'Mobile', hint: `${CANVAS.mobile.width}×${CANVAS.mobile.height}` },
+                ]).map(option => (
+                  <SegmentedButton
+                    key={option.label}
+                    active={viewport.forced === option.key}
+                    onClick={() => switchCanvas(option.key)}
+                    title={option.hint}
+                  >
+                    {option.label}
+                  </SegmentedButton>
+                ))}
               </div>
-              <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#999', lineHeight: 1.45 }}>
-                Showing the <strong>{isMobileViewport ? 'mobile' : 'desktop'}</strong> composition at {viewportSize.width}×{viewportSize.height}.
-                Every visitor sees this exact layout, only scaled.
-              </p>
+            </div>
+
+            {/* ── POV readout ── */}
+            <PovReadout />
+
+            {/* ── Overlays ── */}
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+              <SectionLabel>Overlays</SectionLabel>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {([
+                  ['bounds', 'Canvas'],
+                  ['grid', 'Grid'],
+                  ['centers', 'Centre'],
+                ] as [keyof OverlayOptions, string][]).map(([key, label]) => (
+                  <SegmentedButton
+                    key={key}
+                    active={overlay[key]}
+                    onClick={() => setOverlay(prev => ({ ...prev, [key]: !prev[key] }))}
+                  >
+                    {label}
+                  </SegmentedButton>
+                ))}
+              </div>
             </div>
 
             {/* ── Save / Reset row ── */}
@@ -386,9 +672,7 @@ export const VisualEditorPanel: React.FC = () => {
 
               {/* Element list */}
               <div style={{ padding: '10px 12px 6px' }}>
-                <p style={{ fontSize: '9px', fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
-                  {isMobileViewport ? 'Mobile Elements' : 'Desktop Elements'}
-                </p>
+                <SectionLabel>{isMobileViewport ? 'Mobile elements' : 'Desktop elements'}</SectionLabel>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                   {visibleElementIds.map(id => (
                     <button
@@ -402,7 +686,7 @@ export const VisualEditorPanel: React.FC = () => {
                         fontWeight: selectedElement === id ? 700 : 500,
                         border: selectedElement === id ? '1.5px solid rgba(249,115,22,0.4)' : '1.5px solid transparent',
                         background: selectedElement === id ? 'rgba(249,115,22,0.08)' : 'transparent',
-                        color: selectedElement === id ? '#f97316' : '#555',
+                        color: selectedElement === id ? ACCENT : '#555',
                         cursor: 'pointer',
                         transition: 'all 0.12s',
                       }}
@@ -423,7 +707,7 @@ export const VisualEditorPanel: React.FC = () => {
                   </p>
 
                   {/* ── MOVE HANDLE (primary drag control) ── */}
-                  <DirectionControls />
+                  <DirectionControls step={step} setStep={setStep} />
                   <LayerControls />
 
                   {/* Snap & Reset row */}
@@ -459,14 +743,14 @@ export const VisualEditorPanel: React.FC = () => {
                   {/* X / Y inputs */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '0 12px 10px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>X Pos</label>
+                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>X (design px)</label>
                       <input type="number"
                         value={layout[selectedElement].x}
                         onChange={e => updateProp(selectedElement, 'x', Number(e.target.value))}
                         style={{ width: '100%', border: '1px solid rgba(0,0,0,0.12)', borderRadius: '8px', padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace', background: 'white', boxSizing: 'border-box' }} />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>Y Pos</label>
+                      <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#888', marginBottom: '4px' }}>Y (design px)</label>
                       <input type="number"
                         value={layout[selectedElement].y}
                         onChange={e => updateProp(selectedElement, 'y', Number(e.target.value))}
@@ -485,8 +769,10 @@ export const VisualEditorPanel: React.FC = () => {
                     background: '#fffbf5', border: '1px solid rgba(249,115,22,0.15)',
                     fontSize: '10px', color: '#92400e', lineHeight: '1.5',
                   }}>
-                    <strong>Tip:</strong> Use the arrow buttons for precise movement, or drag the selected element directly.
-                    If element disappears, tap <strong>Snap Back</strong> to restore.
+                    <strong>Design pixels:</strong> every number here is measured on the fixed
+                    {' '}{viewport.designWidth}×{viewport.designHeight} canvas, so whatever you set is what
+                    every visitor gets — their screen only changes the scale, never the placement.
+                    Sizes typed as <code>vw</code>/<code>vh</code> are rewritten to canvas units automatically.
                   </div>
                 </div>
               )}

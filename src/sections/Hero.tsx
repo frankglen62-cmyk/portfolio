@@ -4,7 +4,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useVisualEditor } from '../contexts/VisualEditorContext';
 import { useViewport } from '../hooks/useViewport';
-import { getViewportState } from '../lib/viewportStage';
+import { getViewportState, getRenderScale, getCanvasOrigin } from '../lib/viewportStage';
 import { toCanvasLength } from '../lib/canvasUnits';
 import { EditableElement } from '../components/editor/EditableElement';
 import { WordPullUp } from '../components/animations/WordPullUp';
@@ -76,20 +76,21 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
       // and the About panel would never fade in.
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      // GSAP writes transforms in canvas units, while getBoundingClientRect
-      // reports rendered pixels — everything below is normalised to canvas
-      // units so the motion lands identically at any zoom.
-      const toCanvas = (renderedPx: number) => renderedPx / getViewportState().zoom;
-
       const getDesktopPortraitX = () => -85;
 
       const getAboutPortraitX = () => {
         if (!portraitRef.current || !aboutRef.current) return 0;
 
+        // GSAP writes transforms in canvas units while getBoundingClientRect
+        // reports rendered pixels — so measure against the canvas box itself
+        // instead of against the window, and undo its exact render scale.
         const { designWidth } = getViewportState();
+        const scale = getRenderScale(aboutRef.current);
+        const origin = getCanvasOrigin(aboutRef.current);
+
         const image = portraitRef.current.querySelector('img');
-        const imageWidth = toCanvas(image?.getBoundingClientRect().width ?? 0);
-        const aboutLeft = toCanvas(aboutRef.current.getBoundingClientRect().left);
+        const imageWidth = (image?.getBoundingClientRect().width ?? 0) / scale;
+        const aboutLeft = (aboutRef.current.getBoundingClientRect().left - origin.left) / scale;
         const contentGap = Math.min(16, Math.max(12, designWidth * 0.0075));
         const initialPoseX = getDesktopPortraitX();
         const visibleRightFromCenter = imageWidth * (0.82174688 - 0.5);
@@ -130,7 +131,9 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
             // Keep the final portrait edge clear of the About panel at
             // every desktop aspect ratio.
             x: desktop ? getAboutPortraitX : 0,
-            y: desktop ? () => -60 * (getViewportState().stageHeight / 919) : 24,
+            // Design pixels: the travel is part of the composition, so it must
+            // not scale with however tall this particular window happens to be.
+            y: desktop ? -60 : 24,
             scale: desktop ? 1 : 0.96,
             autoAlpha: desktop ? 1 : 0,
             duration: desktop ? 0.72 : 0.46,
@@ -142,7 +145,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           portraitPoseRef.current,
           {
             x: desktop ? getDesktopPortraitX : 0,
-            y: desktop ? () => -19 * (getViewportState().stageHeight / 919) : 0,
+            y: desktop ? -19 : 0,
             scale: 1,
           },
           {
@@ -179,22 +182,36 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
     <section
       id="home"
       ref={sceneRef}
-      className="relative h-[calc(200*var(--vh))] min-h-[calc(200*var(--vh))] overflow-visible"
+      /* Height is scroll LENGTH, so it follows the window (two screenfuls of
+         travel everywhere). The composition inside does not — see .canvas-box. */
+      className="relative h-[calc(2*var(--screen-h))] min-h-[calc(2*var(--screen-h))] overflow-visible"
     >
       <div id="about" className="absolute top-1/2 h-px w-px" aria-hidden="true" />
 
-      <div className="sticky top-0 h-[calc(100*var(--vh))] min-h-[calc(100*var(--vh))] overflow-hidden">
-        {/* This is the original Hero background, shared by both scroll states. */}
+      <div className="sticky top-0 h-[var(--screen-h)] min-h-[var(--screen-h)] overflow-hidden">
+        {/* This is the original Hero background, shared by both scroll states.
+            It fills the window at any shape — only the background is allowed to. */}
         <div
           className="absolute inset-0"
           style={{
-            background: `
-              radial-gradient(ellipse 55% 50% at 50% 38%, rgba(30, 30, 30, 0.6) 0%, transparent 70%),
-              linear-gradient(180deg, #000000 0%, #0a0a0a 20%, #111 40%, #0a0a0a 60%, #050505 80%, #000000 100%)
-            `,
+            background: 'linear-gradient(180deg, #000000 0%, #0a0a0a 20%, #111 40%, #0a0a0a 60%, #050505 80%, #000000 100%)',
           }}
         />
 
+      {/* ── The hero composition lives on a fixed design-w x design-h frame ──
+          Percentages, `top`/`bottom` and the editor's saved coordinates all
+          resolve against THIS box, never against the window, so the elements
+          keep their exact relationship to one another on every screen shape.
+          Extra window height shows up as more background above it. */}
+      <div className="hero-canvas canvas-box">
+        {/* The key light belongs to the composition, not to the window, so it
+            rides the canvas and keeps landing on the portrait's shoulders. */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 55% 50% at 50% 38%, rgba(30, 30, 30, 0.6) 0%, transparent 70%)',
+          }}
+        />
 
 
         {/* One portrait layer is retained for the entire transition. */}
@@ -420,6 +437,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
           </div>
         </div>
 
+      </div>
       </div>
     </section>
   );

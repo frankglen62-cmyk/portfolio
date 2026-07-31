@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getViewportState } from '../lib/viewportStage';
+import { getRenderScale } from '../lib/viewportStage';
 
 /* eslint-disable react-refresh/only-export-components */
 
@@ -111,7 +111,7 @@ interface VisualEditorContextProps {
   setIsDragging: React.Dispatch<React.SetStateAction<boolean>>;
   startElementDrag: (id: string, event: Pick<PointerEvent, 'clientX' | 'clientY'>) => void;
   dragState: React.MutableRefObject<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>;
-  scaleState: React.MutableRefObject<{ active: boolean; id: string; startY: number; origScale: number; } | null>;
+  scaleState: React.MutableRefObject<{ active: boolean; id: string; startY: number; origScale: number; zoom?: number; } | null>;
   computeGuides: (dragId: string, dragCenterX: number, dragCenterY: number) => void;
   registerElementLabel: (id: string, label: string) => void;
   elementLabels: Record<string, string>;
@@ -156,7 +156,7 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const elementRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const dragState = useRef<{ active: boolean; id: string; startX: number; startY: number; origX: number; origY: number; coordinateScaleX?: number; coordinateScaleY?: number; } | null>(null);
-  const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; } | null>(null);
+  const scaleState = useRef<{ active: boolean; id: string; startY: number; origScale: number; zoom?: number; } | null>(null);
 
   const LS_KEY = 'frankportfolio-layout-v2';
 
@@ -232,12 +232,15 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // Pointer coordinates are in real screen pixels while the page is drawn on a
   // scaled design canvas, so the delta is converted back into canvas units —
   // one pixel of finger travel moves the element the same visible distance no
-  // matter how far the canvas is zoomed.
+  // matter how far the canvas is zoomed. Both axes are design pixels, so both
+  // use the same factor and a diagonal drag can no longer skew. The scale is
+  // measured from the element's own canvas box, which also picks up the hero
+  // overscan on a tall window.
   const startElementDrag = useCallback((id: string, event: Pick<PointerEvent, 'clientX' | 'clientY'>) => {
     const config = layout[id];
     if (!config) return;
 
-    const { zoom, screenHeight, designHeight } = getViewportState();
+    const scale = getRenderScale(elementRefs.current[id]);
     dragState.current = {
       active: true,
       id,
@@ -245,11 +248,8 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
       startY: event.clientY,
       origX: config.x || 0,
       origY: config.y || 0,
-      // X is stored in design pixels → undo the canvas zoom.
-      coordinateScaleX: zoom,
-      // Y is stored as a fraction of the reference height → undo the zoom and
-      // the viewport-height mapping in one go.
-      coordinateScaleY: screenHeight / designHeight,
+      coordinateScaleX: scale,
+      coordinateScaleY: scale,
     };
   }, [layout]);
 
@@ -300,8 +300,10 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       // Scale via scaleState (set by scale-corner handles in EditableElement)
       if (scaleState.current?.active) {
-        const { id, startY, origScale } = scaleState.current;
-        const dy = startY - e.clientY;
+        const { id, startY, origScale, zoom = 1 } = scaleState.current;
+        // Normalised to design pixels so the same drag produces the same scale
+        // change whether the canvas is at 40% or 200%.
+        const dy = (startY - e.clientY) / zoom;
         const newScale = Math.max(0.1, Math.round((origScale + dy * 0.005) * 100) / 100);
         setLayout(prev => ({ ...prev, [id]: { ...prev[id], scale: newScale } }));
       }

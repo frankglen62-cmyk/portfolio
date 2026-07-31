@@ -76,24 +76,37 @@
    Viewport Stage
    ------------------------------------------------------------
    Every length inside `.viewport-stage` is a DESIGN pixel on a
-   fixed-width canvas, scaled to the real screen with CSS zoom.
+   fixed canvas, scaled to the real window with CSS zoom.
 
-   --vw / --vh replace raw `vw` / `svh` units, which are NOT
-   zoom-aware and would otherwise break the composition.
+   THE RULE (see src/lib/viewportStage.ts):
+
+     --vw and --vh are CONSTANTS of the canvas, not window
+     measurements. Anything positioned with px / --vw / --vh
+     renders the identical picture on every screen, only bigger
+     or smaller. Raw `vw` / `vh` / `svh` are forbidden inside the
+     stage: they are not zoom-aware AND they follow the window's
+     aspect ratio, which is exactly what breaks the composition.
+
+     --screen-h is the ONE aspect-aware value (the real window
+     height in design pixels). Use it only for things that must
+     physically fill the window — full-bleed backgrounds and the
+     sticky scroll stage — never to place a design element.
    ============================================================ */
 :root {
   --zoom: 1;
   --design-w: 1920px;
   --design-h: 919px;
+  /* Overwritten per canvas by viewportStage.ts — these are the desktop values. */
   --vw: 19.2px;
+  --vh: 9.19px;
+  --screen-h: 919px;
+  --hero-fill: 1;
 }
 
 :root,
 .viewport-stage {
-  /* 1% of the real viewport height, expressed in design pixels. */
-  --vh: calc(1svh / var(--zoom));
-  /* Full viewport height in design pixels. */
-  --stage-h: calc(100 * var(--vh));
+  /* Full canvas height. Constant, unlike the window. */
+  --stage-h: var(--design-h);
 }
 
 .viewport-stage {
@@ -101,6 +114,40 @@
   position: relative;
   width: var(--design-w);
   margin-inline: auto;
+}
+
+/* ------------------------------------------------------------
+   Canvas box — a fixed design-w x design-h frame that holds a
+   composition. The window may be any shape; the frame never is,
+   so children keep their exact relationship to each other.
+
+   It is pinned to the BOTTOM of its (window-height) parent: the
+   hero's visual weight — portrait, badges, titles — sits along
+   the bottom edge.
+
+   FILLING A TALL WINDOW
+   The canvas is 2.09:1. A window that is proportionally taller —
+   a restored-down window, a 16:9 laptop — would leave a band of
+   empty background above the composition. `--hero-fill` scales
+   the frame up from its bottom centre until it covers that
+   height, so the composition still reads exactly the same, just
+   framed tighter, and the overflow is cropped off the LEFT and
+   RIGHT by the parent's `overflow: hidden`.
+
+   The cap (CANVAS[…].maxFill in viewportStage.ts) comes from how
+   close the hero's own blocks sit to the canvas edges — 1.12
+   today, cropping at most ~103 design px per side. The editor
+   draws those crop lines and warns if an element crosses them,
+   so the cap and the design stay in sync.
+   ------------------------------------------------------------ */
+.canvas-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--design-h);
+  transform: scale(var(--hero-fill));
+  transform-origin: bottom center;
 }
 
 /* Device-emulator look while previewing the other canvas from the editor. */
@@ -162,7 +209,9 @@
     border-radius: 0;
     box-shadow: none;
     z-index: 1;
-    min-height: calc(200 * var(--vh));
+    /* Scroll length, not composition — this one follows the window on purpose
+       so the hero→about transition always takes two screenfuls to play. */
+    min-height: calc(2 * var(--screen-h));
     display: block;   /* Hero manages its own layout with absolute/sticky children */
     overflow: visible;
   }
@@ -182,6 +231,10 @@
       max-height: calc(101 * var(--vh)) !important;
     }
 
+    /* These are only ANCHORS. The composition Frank actually sees comes from
+       the saved editor offsets on top of them (config/layout.json), which move
+       some blocks by more than a thousand design pixels — so never retune the
+       hero by editing these, or his layout shifts underneath him. */
     .hero-badge-wrap,
     .hero-identity-wrap {
       left: calc(8 * var(--vw)) !important;

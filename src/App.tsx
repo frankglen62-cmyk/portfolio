@@ -17,8 +17,15 @@ import { Contact } from './sections/Contact';
 import { Footer } from './sections/Footer';
 import { useHeroIntro } from './hooks/useHeroIntro';
 import { useSideNavVisibility } from './hooks/useSideNavVisibility';
+import { subscribeStageRelayout } from './lib/viewportStage';
 
 gsap.registerPlugin(ScrollTrigger);
+
+if (import.meta.env.DEV) {
+  // Companion to `__viewportStage`: lets a scroll timeline be inspected and
+  // stepped from the console when checking how the stage rescale behaves.
+  Object.assign(window, { gsap, ScrollTrigger });
+}
 
 const App: React.FC = () => {
 
@@ -26,6 +33,26 @@ const App: React.FC = () => {
     // Refresh ScrollTrigger after all sections mount
     const timer = setTimeout(() => ScrollTrigger.refresh(), 500);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Every ScrollTrigger start/end is a cached pixel measurement. Rescaling
+    // the stage — restoring the window down, rotating a phone, switching the
+    // preview canvas — invalidates all of them at once, and without this the
+    // page keeps playing the old timeline: that is what left the About panel
+    // stuck half-faded after a resize.
+    let timer = 0;
+    const unsubscribe = subscribeStageRelayout(() => {
+      // Settle first: dragging a window edge rescales the stage on every frame,
+      // and a full refresh per frame would crawl.
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => ScrollTrigger.refresh(), 140);
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   return (
