@@ -5,10 +5,6 @@ import {
   type FieldDef,
 } from '../../contexts/VisualEditorContext';
 import { useViewport } from '../../hooks/useViewport';
-import {
-  setForcedCanvas, setPreviewDevice, CANVAS, PREVIEW_DEVICES,
-  type CanvasMode,
-} from '../../lib/viewportStage';
 
 /* ═══════════════════════════════════════════
    ICONS
@@ -267,8 +263,21 @@ const CanvasOverlay: React.FC<{ options: OverlayOptions }> = ({ options }) => {
 const PovReadout: React.FC = () => {
   const {
     zoom, heroFill, maxFill, safeHeight, designWidth, designHeight, screenWidth, screenHeight,
-    stageHeight, mode, nativeMode, isPreview, measured,
+    stageHeight, measured,
   } = useViewport();
+
+  // Switching canvases (device emulation on/off) re-renders this panel in the
+  // same commit that swaps the hero's blocks, so the measurement below runs
+  // against the OLD canvas's elements sized to the NEW canvas's width — which
+  // latched a nonsense "1313px past the crop line" that never cleared, because
+  // nothing afterwards re-rendered the panel. Re-measure once the new canvas
+  // has actually painted.
+  const [, remeasure] = React.useReducer((n: number) => n + 1, 0);
+  React.useEffect(() => {
+    let inner = 0;
+    const outer = requestAnimationFrame(() => { inner = requestAnimationFrame(remeasure); });
+    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner); };
+  }, [designWidth, designHeight, zoom, heroFill]);
 
   // How much of the canvas the overscan pushes past the left/right edges…
   const sideCrop = Math.round((designWidth * (1 - 1 / heroFill)) / 2);
@@ -313,27 +322,18 @@ const PovReadout: React.FC = () => {
         tone: '#b91c1c', bg: '#fef2f2',
         text: `An element reaches ${aboveSafe}px above the safe band. Only the tallest devices show it — on a short phone it is cut off. Turn on the Canvas overlay and drag it below the green line.`,
       }
-      : isPreview
+      : overflow
         ? {
-          tone: '#0369a1', bg: '#eff6ff',
-          text: `Emulating the ${mode} canvas — this device is really ${nativeMode}. ${
-            heroFill < 1
-              ? `A phone this tall scales the whole canvas to ${Math.round(heroFill * 100)}%; nothing is cut.`
-              : 'Every device shows this exact composition.'
-          }`,
+          tone: '#b91c1c', bg: '#fef2f2',
+          text: `An element sits ${Math.max(overflowLeft, overflowRight)}px past the ${overflowLeft >= overflowRight ? 'left' : 'right'} crop line. Visitors with taller windows will see it cut — turn on the Canvas overlay and move it inside the green lines.`,
         }
-        : overflow
-          ? {
-            tone: '#b91c1c', bg: '#fef2f2',
-            text: `An element sits ${Math.max(overflowLeft, overflowRight)}px past the ${overflowLeft >= overflowRight ? 'left' : 'right'} crop line. Visitors with taller windows will see it cut — turn on the Canvas overlay and move it inside the green lines.`,
-          }
-          : topCrop > 0
-            ? { tone: '#a16207', bg: '#fefce8', text: `The top ${topCrop}px of the canvas is off-screen here — everything that matters is inside the safe band, so this is background only.` }
-            : spare > 0
-              ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
-              : heroFill < 1
-                ? { tone: '#15803d', bg: '#f0fdf4', text: `POV locked. The whole canvas fits at ${Math.round(heroFill * 100)}% — nothing cut, and every device sees this exact composition.` }
-                : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone${sideCrop ? `, ${sideCrop}px of background cropped per side` : ''}.` };
+        : topCrop > 0
+          ? { tone: '#a16207', bg: '#fefce8', text: `The top ${topCrop}px of the canvas is off-screen here — everything that matters is inside the safe band, so this is background only.` }
+          : spare > 0
+            ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
+            : heroFill < 1
+              ? { tone: '#15803d', bg: '#f0fdf4', text: `POV locked. The whole canvas fits at ${Math.round(heroFill * 100)}% — nothing cut, and every device sees this exact composition.` }
+              : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone${sideCrop ? `, ${sideCrop}px of background cropped per side` : ''}.` };
 
   return (
     <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
@@ -438,11 +438,6 @@ export const VisualEditorPanel: React.FC = () => {
     selectedElement, setSelectedElement, updateProp, saveConfig, resetConfig,
     isSaving, saveStatus, elementLabels, guides,
   } = useVisualEditor();
-
-  const switchCanvas = (next: CanvasMode | null) => {
-    setSelectedElement(null);
-    setForcedCanvas(next);
-  };
 
   const visibleElementIds = Object.keys(layout).filter(id =>
     isMobileViewport ? id.endsWith('Mobile') : !id.endsWith('Mobile')
@@ -645,51 +640,6 @@ export const VisualEditorPanel: React.FC = () => {
                   <CloseIcon />
                 </button>
               </div>
-            </div>
-
-            {/* ── Canvas switch ── */}
-            <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
-              <SectionLabel>Edit canvas</SectionLabel>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {([
-                  { key: null, label: 'Auto', hint: 'Use whichever canvas this device picks' },
-                  { key: 'desktop' as const, label: 'Desktop', hint: `${CANVAS.desktop.width}×${CANVAS.desktop.height}` },
-                  { key: 'mobile' as const, label: 'Mobile', hint: `${CANVAS.mobile.width}×${CANVAS.mobile.height}` },
-                ]).map(option => (
-                  <SegmentedButton
-                    key={option.label}
-                    active={viewport.forced === option.key}
-                    onClick={() => switchCanvas(option.key)}
-                    title={option.hint}
-                  >
-                    {option.label}
-                  </SegmentedButton>
-                ))}
-              </div>
-
-              {/* Which phone the mobile canvas is checked against. Defaults to
-                  the shortest — what fits there fits every handset. */}
-              {isMobileViewport && (
-                <>
-                  <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                    {PREVIEW_DEVICES.map(device => (
-                      <SegmentedButton
-                        key={device.key}
-                        active={viewport.previewDevice === device.key}
-                        onClick={() => { setSelectedElement(null); setPreviewDevice(device.key); }}
-                        title={`${CANVAS.mobile.width}×${device.height} — ${device.hint}`}
-                      >
-                        {device.label}
-                      </SegmentedButton>
-                    ))}
-                  </div>
-                  <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#999', lineHeight: 1.45 }}>
-                    Every phone shows the whole {CANVAS.mobile.width}×{CANVAS.mobile.height} canvas —
-                    a shorter one just scales it down to fit. These presets only change that scale,
-                    never where anything sits.
-                  </p>
-                </>
-              )}
             </div>
 
             {/* ── POV readout ── */}

@@ -144,7 +144,7 @@ export function ToolsFanCards({ categories }: ToolsFanCardsProps) {
               aria-label={`${category.categoryName}: ${category.purpose}`}
             >
               <img
-                src={`${import.meta.env.BASE_URL}tools-panorama-v1.png`}
+                src={`${import.meta.env.BASE_URL}tools-panorama-v1.webp`}
                 alt=""
                 aria-hidden="true"
                 draggable={false}

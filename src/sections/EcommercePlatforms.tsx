@@ -5,10 +5,10 @@ import { ScrollReveal } from '../components/animations/ScrollReveal';
 
 const platforms = [
   { name: 'Amazon', id: 'amazon.png' },
-  { name: 'eBay', id: 'ebay.png' },
+  { name: 'eBay', id: 'ebay.webp' },
   { name: 'Shopify', id: 'shopify.svg' },
   { name: 'Walmart', id: 'walmart.png' },
-  { name: 'Etsy', id: 'etsy.png' },
+  { name: 'Etsy', id: 'etsy.webp' },
   { name: 'AliExpress', id: 'aliexpress.png' },
 ];
 

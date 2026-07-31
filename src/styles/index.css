@@ -155,29 +155,6 @@
   transform-origin: bottom center;
 }
 
-/* Device-emulator look while previewing the other canvas from the editor. */
-[data-canvas-preview="true"] {
-  background: #101216;
-}
-
-[data-canvas-preview="true"] body {
-  background: #101216;
-}
-
-[data-canvas-preview="true"] .viewport-stage {
-  outline: 1px solid rgba(253, 180, 102, 0.55);
-  box-shadow: 0 0 0 100vmax rgba(16, 18, 22, 0.55);
-}
-
-/* Fixed overlays resolve against the window, not the stage — keep them inside
-   the emulated device frame while previewing. */
-[data-canvas-preview="true"] header[data-hero-nav],
-[data-canvas-preview="true"] #mobile-navigation {
-  left: calc(50% - var(--design-w) / 2);
-  right: auto;
-  width: var(--design-w);
-}
-
 /* ============================================================
    Base Styles
    ============================================================ */

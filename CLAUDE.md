@@ -38,7 +38,7 @@ restored-down window would otherwise show different compositions. Instead:
   value. It comes from `calc(100svh / var(--zoom))` in the stylesheet, **not**
   from a JS measurement: `svh` is the small viewport (phone address bar
   showing), so it updates by itself and nothing bottom-anchored can slide under
-  the browser UI. `viewportStage.ts` overrides it only while emulating a device.
+  the browser UI. `viewportStage.ts` never sets it — the stylesheet owns it.
 
 ### Writing CSS / JSX that keeps the POV
 
@@ -109,11 +109,25 @@ behind it (z-index 10 against the portrait's 20), while an 832 preview left
 height, the editor draws the boundary as a green dashed line with a red tint
 above it and the POV readout names how far an element pokes out.
 
-The mobile preview emulates a real handset — Short / Common / Tall (632 / 701 /
-744) in the panel, defaulting to **Short**. It must never be set to the
-canvas's own 372×832: no phone is that shape, and pretending otherwise showed
-131 design px of hero in the editor that Frank's phone cuts. That single wrong
-assumption is why his phone and his edits disagreed.
+### Checking the mobile canvas
+
+Use the **browser's own device emulation** — Chrome DevTools → device toolbar.
+It rewrites `screen` and the pointer type, which is exactly what `detectMode`
+reads, so the page picks the mobile canvas, sets `width=372`, and scales by the
+same rules as a real handset. Nothing about the page knows it is being emulated.
+
+There is **no canvas switch in the editor and no `?canvas=` parameter**. The
+page once had its own emulator (Auto / Desktop / Mobile, plus Short / Common /
+Tall phone heights) and it was removed: a built-in emulator can only guess at a
+phone's height, and when the guess was wrong Frank's edits and Frank's phone
+disagreed about what fits. The browser does not have to guess.
+
+So a canvas is only ever entered the way a visitor enters it — including the
+listeners this needs. Leaving emulation rewrites `screen` *after* the viewport
+resizes, so the ResizeObserver can fire while `screen` still reports the old
+device and latch the wrong canvas. `startViewportStage` therefore also listens
+to `(max-device-width/height: 540px)` and `(pointer: coarse)` / `(hover: none)`
+— the media-query mirror of everything `detectMode` reads.
 
 `characterImage` is exempt from the crop checks (`BLEED_IDS`) — it is scaled far
 past the frame on purpose.
@@ -159,10 +173,9 @@ screen size at any zoom.
   you set is what everyone gets.
 - Elements ending in `Mobile` belong to the mobile canvas; the panel filters
   the list to whichever canvas is active.
-- **Edit canvas**: Auto / Desktop / Mobile. Forcing the canvas your device
-  would not pick puts the page into an emulator frame at the right aspect
-  (`isPreview`), so a phone layout can be edited from a desktop accurately.
-  Also settable with `?canvas=mobile`.
+- The panel has **no canvas switch**. It edits whichever canvas the device is
+  on, so to edit the mobile layout put the browser into device emulation — see
+  *Checking the mobile canvas* above.
 - **Overlays**: canvas bounds (plus the band of window height the canvas does
   not define), the green crop lines, a 40-design-px grid, and centre lines.
 - Arrow keys nudge the selection; Shift = ×5; the step is 1/5/10/25 design px.
@@ -179,7 +192,7 @@ panel and other scroll-driven elements stuck at stale progress.
 ## Debugging from the console
 
 ```js
-__viewportStage.state()        // canvas, zoom, window, crop
-__viewportStage.force('mobile')// same as the editor's canvas switch
-ScrollTrigger.getAll()         // dev builds only
+__viewportStage.state()  // canvas, zoom, window, crop
+__viewportStage.sync()   // re-measure now (the listeners normally do this)
+ScrollTrigger.getAll()   // dev builds only
 ```

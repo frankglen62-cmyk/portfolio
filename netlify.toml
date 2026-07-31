@@ -7,6 +7,32 @@
   to = "/index.html"
   status = 200
 
+# ── Caching ───────────────────────────────────────────────────────────────────
+# Netlify's default for static files is `max-age=0, must-revalidate`, so every
+# image cost a round trip on every visit. What each rule below may claim depends
+# on whether the filename changes when the content does.
+
+# Vite fingerprints these (index-BHeXR0kN.js), so a new build is a new URL and
+# the old one can be kept forever.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The shell must never be cached, or a visitor keeps requesting the previous
+# build's asset URLs after a deploy.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# The saved layout — Frank edits this, so it has to be picked up promptly.
+[[headers]]
+  for = "/layout.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Videos keep their names but are effectively final once shot.
 [[headers]]
   for = "/projects/*"
   [headers.values]
@@ -14,3 +40,26 @@
     Content-Disposition = "inline"
     X-Content-Type-Options = "nosniff"
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Images keep their names across deploys, so `immutable` would strand a visitor
+# on an old picture for a year. A day of freshness, then serve the cached copy
+# instantly while fetching the replacement in the background.
+[[headers]]
+  for = "/skills/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/services-2026/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

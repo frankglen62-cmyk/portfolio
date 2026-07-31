@@ -238,7 +238,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               <div ref={portraitPoseRef} className="h-full origin-bottom will-change-transform">
               <EditableElement id="characterImage" responsivePosition className="h-full" style={{ transformOrigin: 'bottom' }}>
                 <img
-                  src={`${import.meta.env.BASE_URL}frank-profile.png`}
+                  src={`${import.meta.env.BASE_URL}frank-profile.webp`}
                   alt="Frank Glen Martin"
                   className="hero-portrait-img object-contain origin-bottom"
                   draggable={false}

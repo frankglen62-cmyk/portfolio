@@ -7,7 +7,7 @@ const accordionSkills = [
   {
     label: 'Ecommerce Platforms',
     sublabel: 'PLATFORMS',
-    image: `${import.meta.env.BASE_URL}skills/platforms.png`,
+    image: `${import.meta.env.BASE_URL}skills/platforms.webp`,
     imageAlt: 'Ecommerce operations workspace with store dashboards and parcels',
     description: 'Marketplace and store admin systems used for daily ecommerce operations',
     detailTags: ['eBay Seller Hub', 'Shopify Admin', 'Amazon Seller Central', 'Walmart Marketplace', 'Etsy Shop Manager', 'Poshmark']
@@ -15,7 +15,7 @@ const accordionSkills = [
   {
     label: 'Product Listing',
     sublabel: 'LISTING',
-    image: `${import.meta.env.BASE_URL}skills/product-listing.png`,
+    image: `${import.meta.env.BASE_URL}skills/product-listing.webp`,
     imageAlt: 'Product photography and listing production workspace',
     description: 'Clean, searchable product pages with complete item details and organized SKUs',
     detailTags: ['Product Titles', 'Descriptions', 'Bullet Points', 'Categories', 'Item Specifics', 'Variations', 'SKU Organization']
@@ -23,7 +23,7 @@ const accordionSkills = [
   {
     label: 'SEO & Optimization',
     sublabel: 'SEARCH',
-    image: `${import.meta.env.BASE_URL}skills/seo-optimization.png`,
+    image: `${import.meta.env.BASE_URL}skills/seo-optimization.webp`,
     imageAlt: 'Marketplace SEO analytics and optimized product page',
     description: 'Keyword-led listing improvements for stronger marketplace search visibility',
     detailTags: ['Keyword Research', 'SEO Titles', 'Search Descriptions', 'eBay Item Specifics', 'Amazon Bullets', 'Shopify Meta Tags']
@@ -31,7 +31,7 @@ const accordionSkills = [
   {
     label: 'Product Research',
     sublabel: 'RESEARCH',
-    image: `${import.meta.env.BASE_URL}skills/product-research.png`,
+    image: `${import.meta.env.BASE_URL}skills/product-research.webp`,
     imageAlt: 'Product samples beside a competitor research dashboard',
     description: 'Demand, competitor, pricing, and supplier research for smarter listing decisions',
     detailTags: ['Demand Research', 'Competitor Analysis', 'Pricing Research', 'Supplier Research', 'Trend Checking', 'Profitable Products']
@@ -39,7 +39,7 @@ const accordionSkills = [
   {
     label: 'Inventory & Orders',
     sublabel: 'MANAGEMENT',
-    image: `${import.meta.env.BASE_URL}skills/inventory-orders.png`,
+    image: `${import.meta.env.BASE_URL}skills/inventory-orders.webp`,
     imageAlt: 'Inventory station with parcels, scanner, and order dashboard',
     description: 'Reliable stock, order, fulfillment, tracking, and returns support',
     detailTags: ['Inventory Monitoring', 'Stock Updates', 'Price Adjustments', 'Order Processing', 'Tracking Updates', 'Returns']
@@ -47,7 +47,7 @@ const accordionSkills = [
   {
     label: 'Data Management',
     sublabel: 'DATA',
-    image: `${import.meta.env.BASE_URL}skills/data-management.png`,
+    image: `${import.meta.env.BASE_URL}skills/data-management.webp`,
     imageAlt: 'Ecommerce spreadsheet and reporting data workspace',
     description: 'Spreadsheet, CSV, and reporting workflows that keep store data tidy',
     detailTags: ['Microsoft Excel', 'Google Sheets', 'CSV Imports', 'CSV Exports', 'Bulk Updates', 'Reports']

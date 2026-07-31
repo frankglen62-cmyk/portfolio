@@ -81,11 +81,17 @@ export function VideoText({
           <div className="relative h-full w-full overflow-hidden bg-[#e7ebe9]">
             <video
               ref={videoRef}
-              autoPlay
               loop
               muted
               playsInline
-              preload="auto"
+              /* `autoPlay` fetches the whole clip during the first paint no
+                 matter what `preload` says, and this title sits far below the
+                 fold. The observer above already starts playback when it comes
+                 into view, and `play()` on a `preload="none"` element loads it
+                 then — so the bytes are paid for only if the visitor scrolls
+                 here. Until then the mask shows the solid #e7ebe9 fill behind
+                 it, i.e. the title is readable the whole time. */
+              preload="none"
               onCanPlay={() => setIsVideoReady(true)}
               onLoadedData={() => setIsVideoReady(true)}
               onPlaying={() => setIsVideoReady(true)}

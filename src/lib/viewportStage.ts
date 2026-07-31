@@ -101,50 +101,15 @@ export const CANVAS: Record<CanvasMode, {
   mobile: { width: 372, height: 832, minFill: 0.6, maxFill: 1, safeHeight: 832 },
 };
 
-/**
- * Viewports the editor can emulate for the mobile canvas. Previewing at the
- * canvas's own 372x832 was the bug that made Frank's phone disagree with his
- * edits: no phone is that shape, so the preview showed 131 design pixels of
- * hero that his device cuts off.
- */
-export const PREVIEW_DEVICES = [
-  { key: 'short', label: 'Short', height: 632, hint: '16:9 handset — the floor every phone clears' },
-  { key: 'common', label: 'Common', height: 701, hint: "Frank's phone, and the middle of the range" },
-  { key: 'tall', label: 'Tall', height: 744, hint: '20:9 handset — shows the most' },
-] as const;
-
-export type PreviewDeviceKey = typeof PREVIEW_DEVICES[number]['key'];
-
-const DEVICE_KEY = 'frankportfolio-preview-device';
-
-const readPreviewDevice = (): PreviewDeviceKey => {
-  if (!isBrowser) return 'short';
-  try {
-    const stored = localStorage.getItem(DEVICE_KEY);
-    if (PREVIEW_DEVICES.some(device => device.key === stored)) return stored as PreviewDeviceKey;
-  } catch {
-    /* private mode — fall through */
-  }
-  // Default to the shortest: what survives here survives on every phone.
-  return 'short';
-};
-
-const previewHeight = (key: PreviewDeviceKey) =>
-  PREVIEW_DEVICES.find(device => device.key === key)?.height ?? 632;
-
 /** Below this the page would be unreadable — let it overflow instead. */
 const MIN_ZOOM = 0.15;
 
 /** Rounding the scale keeps sub-pixel jitter from re-running every subscriber. */
 const ZOOM_PRECISION = 10000;
 
-const OVERRIDE_KEY = 'frankportfolio-canvas-override';
-
 export interface ViewportState {
   /** Which design canvas is active. */
   mode: CanvasMode;
-  /** The canvas this device would pick on its own, ignoring any override. */
-  nativeMode: CanvasMode;
   /** realWindowWidth / designWidth — how much CSS `zoom` is applied. */
   zoom: number;
   /** Canvas width in design pixels (1920 or 372). */
@@ -162,44 +127,27 @@ export interface ViewportState {
   maxFill: number;
   /** Band up from the canvas bottom that every device shows. See CANVAS[…]. */
   safeHeight: number;
-  /** Which emulated phone the editor preview is using. */
-  previewDevice: PreviewDeviceKey;
   /** Real window size in rendered CSS pixels. */
   screenWidth: number;
   screenHeight: number;
   /** True once the window has actually been measured (never on the very first tick). */
   measured: boolean;
-  /** Manual canvas override, when one is active. */
-  forced: CanvasMode | null;
-  /**
-   * True when the forced canvas is not the one this device would pick — the
-   * page is then fitted like a device emulator instead of filling the window,
-   * so a mobile preview on a desktop really shows a phone-shaped viewport.
-   */
-  isPreview: boolean;
 }
 
 const isBrowser = typeof window !== 'undefined';
-
-const readForced = (): CanvasMode | null => {
-  if (!isBrowser) return null;
-
-  const fromUrl = new URLSearchParams(window.location.search).get('canvas');
-  if (fromUrl === 'mobile' || fromUrl === 'desktop') return fromUrl;
-
-  try {
-    const stored = localStorage.getItem(OVERRIDE_KEY);
-    if (stored === 'mobile' || stored === 'desktop') return stored;
-  } catch {
-    /* private mode — ignore */
-  }
-  return null;
-};
 
 /**
  * The canvas is picked from the DEVICE, never from the window size, so
  * shrinking or restoring a desktop window keeps the identical desktop
  * composition — which is the entire point of the stage.
+ *
+ * There is no override. To see the mobile canvas from a desktop, use the
+ * browser's own device emulation (DevTools → device toolbar): it reports the
+ * handset's `screen` metrics and a coarse pointer, so the checks below pick
+ * `mobile` exactly the way a real phone does — same canvas, same viewport meta,
+ * same scale. An emulator built into the page could only ever approximate that,
+ * and when its guess at a phone's height was wrong the editor and Frank's
+ * actual phone disagreed about what fits.
  */
 const detectMode = (): CanvasMode => {
   if (!isBrowser) return 'desktop';
@@ -223,34 +171,21 @@ const detectMode = (): CanvasMode => {
 };
 
 const computeState = (): ViewportState => {
-  const forced = readForced();
-  const nativeMode = detectMode();
-  const mode = forced ?? nativeMode;
+  const mode = detectMode();
   const design = CANVAS[mode];
-  const isPreview = forced !== null && forced !== nativeMode;
-  const previewDevice = readPreviewDevice();
-
-  // What the emulated device can actually show. NOT the canvas height: no phone
-  // is 372x832, and pretending otherwise is what let 131 design pixels of hero
-  // look fine in the editor and vanish on a real handset.
-  const emulatedHeight = mode === 'mobile' ? previewHeight(previewDevice) : design.height;
 
   const fallback: ViewportState = {
     mode,
-    nativeMode,
     zoom: 1,
     designWidth: design.width,
     designHeight: design.height,
-    stageHeight: emulatedHeight,
+    stageHeight: design.height,
     heroFill: 1,
     maxFill: design.maxFill,
     safeHeight: design.safeHeight,
-    previewDevice,
     screenWidth: design.width,
     screenHeight: design.height,
     measured: false,
-    forced,
-    isPreview,
   };
 
   if (!isBrowser) return fallback;
@@ -264,19 +199,14 @@ const computeState = (): ViewportState => {
   // state until there is something real to measure.
   if (!screenWidth || !screenHeight) return fallback;
 
-  // Normally the canvas fills the window edge to edge — width decides the scale
-  // and nothing else. In preview it is fitted instead, so the whole emulated
-  // device — width AND height — is visible at once.
-  const rawZoom = isPreview
-    ? Math.min(screenWidth / design.width, screenHeight / emulatedHeight)
-    : screenWidth / design.width;
-  const zoom = Math.round(Math.max(MIN_ZOOM, rawZoom) * ZOOM_PRECISION) / ZOOM_PRECISION;
+  // The canvas fills the window edge to edge — width decides the scale and
+  // nothing else.
+  const zoom = Math.round(
+    Math.max(MIN_ZOOM, screenWidth / design.width) * ZOOM_PRECISION,
+  ) / ZOOM_PRECISION;
 
-  // While emulating, the "window" is the chosen device — so the stage gets that
-  // device's height, and the canvas is cropped exactly as the handset crops it.
-  const stageHeight = isPreview
-    ? emulatedHeight
-    : Math.round((screenHeight / zoom) * 100) / 100;
+  // The real window height, in design pixels.
+  const stageHeight = Math.round((screenHeight / zoom) * 100) / 100;
 
   // Match the composition to the height it actually has: scale UP to cover a
   // taller viewport, DOWN to fit a shorter one. Between minFill and maxFill the
@@ -289,7 +219,6 @@ const computeState = (): ViewportState => {
 
   return {
     mode,
-    nativeMode,
     zoom,
     designWidth: design.width,
     designHeight: design.height,
@@ -297,12 +226,9 @@ const computeState = (): ViewportState => {
     heroFill,
     maxFill: design.maxFill,
     safeHeight: design.safeHeight,
-    previewDevice,
     screenWidth,
     screenHeight,
     measured: true,
-    forced,
-    isPreview,
   };
 };
 
@@ -319,7 +245,7 @@ const applyViewportMeta = (next: ViewportState) => {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]');
   if (!meta) return;
 
-  const content = next.mode === 'mobile' && !next.isPreview
+  const content = next.mode === 'mobile'
     ? `width=${next.designWidth}, viewport-fit=cover`
     : 'width=device-width, initial-scale=1, viewport-fit=cover';
 
@@ -332,8 +258,6 @@ const applyToDocument = (next: ViewportState) => {
 
   applyViewportMeta(next);
   root.dataset.canvas = next.mode;
-  if (next.isPreview) root.dataset.canvasPreview = 'true';
-  else delete root.dataset.canvasPreview;
 
   root.style.setProperty('--zoom', String(next.zoom));
   root.style.setProperty('--design-w', `${next.designWidth}px`);
@@ -350,14 +274,11 @@ const applyToDocument = (next: ViewportState) => {
      physically fill the window (full-bleed backgrounds, sticky scroll stages).
      Never use it to position a design element.
 
-     Normally it is NOT set here: the stylesheet derives it from `100svh`, which
-     a phone keeps correct by itself as the address bar shows and hides. A
-     frozen pixel value taken from `clientHeight` does not — it is the reason
-     the mobile hero pushed its bottom row under the browser UI. The override
-     exists only for the editor's device preview, where the emulated viewport
-     has nothing to do with the real window. */
-  if (next.isPreview) root.style.setProperty('--screen-h', `${next.stageHeight}px`);
-  else root.style.removeProperty('--screen-h');
+     It is NOT set here: the stylesheet derives it from `100svh`, which a phone
+     keeps correct by itself as the address bar shows and hides. A frozen pixel
+     value taken from `clientHeight` does not — it is the reason the mobile hero
+     pushed its bottom row under the browser UI. */
+  root.style.removeProperty('--screen-h');
 
   /* Overscan a `.canvas-box` applies to fill a tall window. */
   root.style.setProperty('--hero-fill', String(next.heroFill));
@@ -368,10 +289,7 @@ const hasChanged = (a: ViewportState, b: ViewportState) =>
   a.zoom !== b.zoom ||
   a.screenWidth !== b.screenWidth ||
   a.screenHeight !== b.screenHeight ||
-  a.measured !== b.measured ||
-  a.forced !== b.forced ||
-  a.isPreview !== b.isPreview ||
-  a.previewDevice !== b.previewDevice;
+  a.measured !== b.measured;
 
 /** True when the page has to be re-measured by scroll/animation engines. */
 const needsRelayout = (a: ViewportState, b: ViewportState) =>
@@ -408,27 +326,6 @@ export const subscribeStageRelayout = (listener: () => void) => {
   return () => {
     relayoutListeners.delete(listener);
   };
-};
-
-/** Force a canvas (used by the visual editor's Desktop/Mobile preview switch). */
-/** Pick which phone the editor emulates while previewing the mobile canvas. */
-export const setPreviewDevice = (key: PreviewDeviceKey) => {
-  try {
-    localStorage.setItem(DEVICE_KEY, key);
-  } catch {
-    /* private mode — the preview just stays on the default */
-  }
-  sync();
-};
-
-export const setForcedCanvas = (mode: CanvasMode | null) => {
-  try {
-    if (mode) localStorage.setItem(OVERRIDE_KEY, mode);
-    else localStorage.removeItem(OVERRIDE_KEY);
-  } catch {
-    /* private mode — the URL param still works */
-  }
-  sync();
 };
 
 /** Convert a rendered/client pixel value (e.g. clientX, getBoundingClientRect) to design pixels. */
@@ -495,6 +392,26 @@ export const startViewportStage = () => {
   // Dragging a window onto a monitor with a different DPI rescales everything.
   window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
     ?.addEventListener?.('change', sync);
+
+  /* ── Device emulation ──────────────────────────────────────────────────────
+     Turning DevTools' device toolbar on or off is how the mobile canvas is
+     checked from a desktop, and it is the one change `detectMode` cares about
+     that the listeners above can miss: the browser rewrites `screen` and the
+     input type without necessarily resizing the layout viewport afterwards.
+     Observed order is viewport first, `screen` second — so the ResizeObserver
+     fires while `screen` still reports the old device and latches the wrong
+     canvas, with nothing left to correct it.
+
+     These four track exactly what `detectMode` reads — `device-width/height`
+     are the media-query mirror of `screen`, and pointer/hover are the touch
+     emulation — so the toggle itself becomes the signal. `detectMode` stays the
+     authority; these only say "look again". */
+  [
+    '(max-device-width: 540px)',
+    '(max-device-height: 540px)',
+    '(pointer: coarse)',
+    '(hover: none)',
+  ].forEach(query => window.matchMedia(query)?.addEventListener?.('change', sync));
 };
 
 // Apply immediately on import so the first paint already uses the right canvas.
@@ -502,10 +419,11 @@ startViewportStage();
 
 if (isBrowser) {
   // Handy from the browser console when checking why something looks off:
-  //   __viewportStage.state()   __viewportStage.force('mobile')
+  //   __viewportStage.state()
+  // To check the mobile canvas, switch the browser into device emulation —
+  // the stage follows it on its own.
   (window as unknown as Record<string, unknown>).__viewportStage = {
     state: getViewportState,
     sync,
-    force: setForcedCanvas,
   };
 }

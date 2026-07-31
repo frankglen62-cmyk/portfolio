@@ -325,7 +325,13 @@ export const ProjectMediaViewer: React.FC<ProjectMediaViewerProps> = ({
                           videoRefs.current[index] = element;
                         }}
                         src={media.src}
-                        preload="auto"
+                        /* Every card in the stack is mounted at once, so a flat
+                           `preload="auto"` pulled all five clips — ~24 MB — the
+                           moment the viewer opened. Only the card being watched
+                           needs the whole file; its two neighbours need enough
+                           to show the frame at 0.1s, and the rest can wait
+                           until they are swiped to. */
+                        preload={isActive ? 'auto' : Math.abs(relativePosition) <= 1 ? 'metadata' : 'none'}
                         playsInline
                         loop
                         controlsList="nodownload noremoteplayback"

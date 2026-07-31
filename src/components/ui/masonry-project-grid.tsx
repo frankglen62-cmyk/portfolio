@@ -164,9 +164,13 @@ export function MasonryProjectGrid() {
             ref={previewVideoRef}
             src={ugcShowcase.media[0].src}
             muted
-            autoPlay
             playsInline
-            preload="auto"
+            /* This tile is an animated thumbnail for a 5.7 MB clip, and it is
+               below the fold — with `autoPlay` + `preload="auto"` the browser
+               pulled all of it before the hero had finished painting. The
+               observer below starts playback when the grid comes into view,
+               which is what actually loads it. */
+            preload="none"
             onLoadedMetadata={(event) => {
               if (event.currentTarget.currentTime < 0.8) {
                 event.currentTarget.currentTime = 0.8;
