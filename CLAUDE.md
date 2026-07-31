@@ -34,8 +34,11 @@ restored-down window would otherwise show different compositions. Instead:
 
 - `--vw` = `designWidth / 100` — **a constant**, not 1% of the window
 - `--vh` = `designHeight / 100` — **a constant**, not 1% of the window
-- `--screen-h` = the real window height in design px — the *only* aspect-aware
-  value in the system
+- `--screen-h` = the live window height in design px — the *only* aspect-aware
+  value. It comes from `calc(100svh / var(--zoom))` in the stylesheet, **not**
+  from a JS measurement: `svh` is the small viewport (phone address bar
+  showing), so it updates by itself and nothing bottom-anchored can slide under
+  the browser UI. `viewportStage.ts` overrides it only while emulating a device.
 
 ### Writing CSS / JSX that keeps the POV
 
@@ -79,6 +82,31 @@ a block outward, re-check it**: the editor's Canvas overlay draws the crop lines
 in green and the POV readout turns red naming the element's overhang. Mobile
 uses `maxFill: 1` — phone margins are ~15px and a phone viewport is almost
 always shorter than the 832 canvas anyway.
+
+### The safe band — what "every device" actually means
+
+A device shorter than the canvas simply cuts the top off, and how much it cuts
+depends on the device. `CANVAS[…].safeHeight` is the band, measured **up from
+the bottom**, that every device is guaranteed to show:
+
+| Canvas  | Safe band | Range devices actually show |
+| ------- | --------- | --------------------------- |
+| mobile  | 632 of 832 | 632 (16:9 handset) … 744 (20:9); Frank's phone is 701 |
+| desktop | 919 (all)  | the overscan covers the taller direction |
+
+**Design inside the band and the composition is identical on every device.**
+Above it, only tall devices see anything. The editor draws the boundary as a
+green dashed line with a red tint above it (Canvas overlay), and the POV
+readout turns red naming how far an element pokes out.
+
+The mobile preview emulates a real handset — Short / Common / Tall in the panel,
+defaulting to **Short**, because what fits there fits everything. It must never
+be set to the canvas's own 372×832: no phone is that shape, and pretending
+otherwise showed 131 design px of hero in the editor that Frank's phone cuts.
+That single wrong assumption is why his phone and his edits disagreed.
+
+`characterImage` is exempt from both checks (`BLEED_IDS`) — it is scaled far
+past the frame on purpose.
 
 ### Consequences to expect
 

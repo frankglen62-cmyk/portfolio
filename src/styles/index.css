@@ -99,8 +99,13 @@
   /* Overwritten per canvas by viewportStage.ts — these are the desktop values. */
   --vw: 19.2px;
   --vh: 9.19px;
-  --screen-h: 919px;
   --hero-fill: 1;
+  /* Live window height in design pixels. `svh` is the SMALL viewport — the one
+     with the phone's address bar showing — so nothing the hero anchors to the
+     bottom can ever slide underneath it. It also updates by itself, which a
+     JS-measured pixel value cannot; viewportStage.ts only overrides this while
+     the editor is emulating a device. */
+  --screen-h: calc(100svh / var(--zoom));
 }
 
 :root,
@@ -212,6 +217,10 @@
     /* Scroll length, not composition — this one follows the window on purpose
        so the hero→about transition always takes two screenfuls to play. */
     min-height: calc(2 * var(--screen-h));
+    /* The sticky child is only `svh` tall. When a phone hides its address bar
+       the viewport grows past that, and without this the page background
+       showed through as a pale band under the About panel. */
+    background: #000000;
     display: block;   /* Hero manages its own layout with absolute/sticky children */
     overflow: visible;
   }

@@ -66,10 +66,57 @@ export const CANVAS: Record<CanvasMode, {
    * them, so moving a block outward is caught rather than silently clipped.
    */
   maxFill: number;
+  /**
+   * The band, measured up from the BOTTOM of the canvas, that every device is
+   * guaranteed to show. The canvas is bottom-anchored, so a device shorter than
+   * the canvas simply cuts the top off — and how much it cuts depends on the
+   * device. Design inside this band and the composition is identical
+   * everywhere; put something above it and only tall devices will see it.
+   *
+   * mobile 632 — a phone's viewport at 372 CSS px wide, after the browser's own
+   * chrome, runs from about 632 (older 16:9 handsets) to about 744 (20:9). The
+   * measured reference is Frank's own phone at 701. 632 is the floor, so it is
+   * what "every phone" means.
+   *
+   * desktop 919 — the whole canvas. A desktop window shorter than the canvas is
+   * rare, and the overscan (maxFill) already covers the taller direction.
+   */
+  safeHeight: number;
 }> = {
-  desktop: { width: 1920, height: 919, maxFill: 1.12 },
-  mobile: { width: 372, height: 832, maxFill: 1 },
+  desktop: { width: 1920, height: 919, maxFill: 1.12, safeHeight: 919 },
+  mobile: { width: 372, height: 832, maxFill: 1, safeHeight: 632 },
 };
+
+/**
+ * Viewports the editor can emulate for the mobile canvas. Previewing at the
+ * canvas's own 372x832 was the bug that made Frank's phone disagree with his
+ * edits: no phone is that shape, so the preview showed 131 design pixels of
+ * hero that his device cuts off.
+ */
+export const PREVIEW_DEVICES = [
+  { key: 'short', label: 'Short', height: 632, hint: '16:9 handset — the floor every phone clears' },
+  { key: 'common', label: 'Common', height: 701, hint: "Frank's phone, and the middle of the range" },
+  { key: 'tall', label: 'Tall', height: 744, hint: '20:9 handset — shows the most' },
+] as const;
+
+export type PreviewDeviceKey = typeof PREVIEW_DEVICES[number]['key'];
+
+const DEVICE_KEY = 'frankportfolio-preview-device';
+
+const readPreviewDevice = (): PreviewDeviceKey => {
+  if (!isBrowser) return 'short';
+  try {
+    const stored = localStorage.getItem(DEVICE_KEY);
+    if (PREVIEW_DEVICES.some(device => device.key === stored)) return stored as PreviewDeviceKey;
+  } catch {
+    /* private mode — fall through */
+  }
+  // Default to the shortest: what survives here survives on every phone.
+  return 'short';
+};
+
+const previewHeight = (key: PreviewDeviceKey) =>
+  PREVIEW_DEVICES.find(device => device.key === key)?.height ?? 632;
 
 /** Below this the page would be unreadable — let it overflow instead. */
 const MIN_ZOOM = 0.15;
@@ -99,6 +146,10 @@ export interface ViewportState {
   heroFill: number;
   /** The ceiling `heroFill` can reach on this canvas — the crop budget. */
   maxFill: number;
+  /** Band up from the canvas bottom that every device shows. See CANVAS[…]. */
+  safeHeight: number;
+  /** Which emulated phone the editor preview is using. */
+  previewDevice: PreviewDeviceKey;
   /** Real window size in rendered CSS pixels. */
   screenWidth: number;
   screenHeight: number;
@@ -163,6 +214,12 @@ const computeState = (): ViewportState => {
   const mode = forced ?? nativeMode;
   const design = CANVAS[mode];
   const isPreview = forced !== null && forced !== nativeMode;
+  const previewDevice = readPreviewDevice();
+
+  // What the emulated device can actually show. NOT the canvas height: no phone
+  // is 372x832, and pretending otherwise is what let 131 design pixels of hero
+  // look fine in the editor and vanish on a real handset.
+  const emulatedHeight = mode === 'mobile' ? previewHeight(previewDevice) : design.height;
 
   const fallback: ViewportState = {
     mode,
@@ -170,9 +227,11 @@ const computeState = (): ViewportState => {
     zoom: 1,
     designWidth: design.width,
     designHeight: design.height,
-    stageHeight: design.height,
+    stageHeight: emulatedHeight,
     heroFill: 1,
     maxFill: design.maxFill,
+    safeHeight: design.safeHeight,
+    previewDevice,
     screenWidth: design.width,
     screenHeight: design.height,
     measured: false,
@@ -195,15 +254,14 @@ const computeState = (): ViewportState => {
   // and nothing else. In preview it is fitted instead, so the whole emulated
   // device — width AND height — is visible at once.
   const rawZoom = isPreview
-    ? Math.min(screenWidth / design.width, screenHeight / design.height)
+    ? Math.min(screenWidth / design.width, screenHeight / emulatedHeight)
     : screenWidth / design.width;
   const zoom = Math.round(Math.max(MIN_ZOOM, rawZoom) * ZOOM_PRECISION) / ZOOM_PRECISION;
 
-  // While emulating a device the "window" IS the canvas, so the stage gets the
-  // canvas height exactly — otherwise a phone preview on a desktop would be
-  // given the desktop window's height and stop looking like a phone.
+  // While emulating, the "window" is the chosen device — so the stage gets that
+  // device's height, and the canvas is cropped exactly as the handset crops it.
   const stageHeight = isPreview
-    ? design.height
+    ? emulatedHeight
     : Math.round((screenHeight / zoom) * 100) / 100;
 
   // Fill a taller-than-canvas window by scaling the composition up rather than
@@ -221,6 +279,8 @@ const computeState = (): ViewportState => {
     stageHeight,
     heroFill,
     maxFill: design.maxFill,
+    safeHeight: design.safeHeight,
+    previewDevice,
     screenWidth,
     screenHeight,
     measured: true,
@@ -271,8 +331,16 @@ const applyToDocument = (next: ViewportState) => {
   /* ── The one aspect-aware value ───────────────────────────────────────────
      How tall the real window is, in design pixels. Only for things that must
      physically fill the window (full-bleed backgrounds, sticky scroll stages).
-     Never use it to position a design element. */
-  root.style.setProperty('--screen-h', `${next.stageHeight}px`);
+     Never use it to position a design element.
+
+     Normally it is NOT set here: the stylesheet derives it from `100svh`, which
+     a phone keeps correct by itself as the address bar shows and hides. A
+     frozen pixel value taken from `clientHeight` does not — it is the reason
+     the mobile hero pushed its bottom row under the browser UI. The override
+     exists only for the editor's device preview, where the emulated viewport
+     has nothing to do with the real window. */
+  if (next.isPreview) root.style.setProperty('--screen-h', `${next.stageHeight}px`);
+  else root.style.removeProperty('--screen-h');
 
   /* Overscan a `.canvas-box` applies to fill a tall window. */
   root.style.setProperty('--hero-fill', String(next.heroFill));
@@ -285,7 +353,8 @@ const hasChanged = (a: ViewportState, b: ViewportState) =>
   a.screenHeight !== b.screenHeight ||
   a.measured !== b.measured ||
   a.forced !== b.forced ||
-  a.isPreview !== b.isPreview;
+  a.isPreview !== b.isPreview ||
+  a.previewDevice !== b.previewDevice;
 
 /** True when the page has to be re-measured by scroll/animation engines. */
 const needsRelayout = (a: ViewportState, b: ViewportState) =>
@@ -325,6 +394,16 @@ export const subscribeStageRelayout = (listener: () => void) => {
 };
 
 /** Force a canvas (used by the visual editor's Desktop/Mobile preview switch). */
+/** Pick which phone the editor emulates while previewing the mobile canvas. */
+export const setPreviewDevice = (key: PreviewDeviceKey) => {
+  try {
+    localStorage.setItem(DEVICE_KEY, key);
+  } catch {
+    /* private mode — the preview just stays on the default */
+  }
+  sync();
+};
+
 export const setForcedCanvas = (mode: CanvasMode | null) => {
   try {
     if (mode) localStorage.setItem(OVERRIDE_KEY, mode);

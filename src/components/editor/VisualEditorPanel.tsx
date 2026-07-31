@@ -5,7 +5,10 @@ import {
   type FieldDef,
 } from '../../contexts/VisualEditorContext';
 import { useViewport } from '../../hooks/useViewport';
-import { setForcedCanvas, CANVAS, type CanvasMode } from '../../lib/viewportStage';
+import {
+  setForcedCanvas, setPreviewDevice, CANVAS, PREVIEW_DEVICES,
+  type CanvasMode,
+} from '../../lib/viewportStage';
 
 /* ═══════════════════════════════════════════
    ICONS
@@ -63,10 +66,17 @@ const cropBounds = (maxFill: number) => ({
 });
 
 /**
+ * Elements that are SUPPOSED to run off the canvas. The portrait is scaled far
+ * past the frame on purpose — counting it would keep the crop check permanently
+ * red and train Frank to ignore it.
+ */
+const BLEED_IDS = new Set(['characterImage']);
+
+/**
  * Design-space bounds of everything the visitor must actually see. Only the
- * editor-controlled blocks and the About panel count — background layers are
- * meant to bleed off the edges. Read-only, and always converted back to an
- * unscaled canvas, so it can never feed back into the scale that produced it.
+ * editor-controlled blocks and the About panel count. Read-only, and always
+ * converted back to an unscaled canvas, so it can never feed back into the
+ * scale that produced it.
  */
 const measureContentBounds = (designWidth: number) => {
   const box = document.querySelector('.canvas-box');
@@ -78,14 +88,20 @@ const measureContentBounds = (designWidth: number) => {
 
   let left = Infinity;
   let right = -Infinity;
-  box.querySelectorAll('[data-editable-id], .hero-about-panel').forEach(el => {
+  let top = Infinity;
+  // The About panel's own box is taller than its content — it centres what it
+  // holds — so measure the children that actually render, not the container.
+  box.querySelectorAll('[data-editable-id], .hero-about-panel > *').forEach(el => {
+    const id = (el as HTMLElement).dataset.editableId;
+    if (id && BLEED_IDS.has(id)) return;
     const rect = el.getBoundingClientRect();
     if (rect.width <= 0) return;
     left = Math.min(left, (rect.left - boxRect.left) / scale);
     right = Math.max(right, (rect.right - boxRect.left) / scale);
+    top = Math.min(top, (rect.top - boxRect.top) / scale);
   });
 
-  return Number.isFinite(left) ? { left, right } : null;
+  return Number.isFinite(left) ? { left, right, top } : null;
 };
 
 
@@ -137,18 +153,23 @@ interface OverlayOptions {
 }
 
 const CanvasOverlay: React.FC<{ options: OverlayOptions }> = ({ options }) => {
-  const { zoom, heroFill, maxFill, designWidth, designHeight, screenWidth, screenHeight, isPreview } = useViewport();
+  const {
+    zoom, heroFill, maxFill, safeHeight, designWidth, designHeight,
+    screenWidth, screenHeight, stageHeight,
+  } = useViewport();
   const crop = cropBounds(maxFill);
   if (!options.bounds && !options.grid && !options.centers) return null;
 
   // Where `.canvas-box` actually lands: page scale × hero overscan, centred
-  // horizontally (so the crop is symmetrical) and pinned to the bottom of the
-  // first screenful. In preview it starts at the top instead.
+  // horizontally (so the crop is symmetrical) and pinned to the BOTTOM of the
+  // viewport it lives in. That viewport is the window normally and the emulated
+  // device in preview — `stageHeight * zoom` is both, in rendered pixels.
   const boxScale = zoom * heroFill;
   const stageWidth = designWidth * boxScale;
   const stageLeft = (screenWidth - stageWidth) / 2;
   const boxHeight = designHeight * boxScale;
-  const boxTop = isPreview ? 0 : screenHeight - boxHeight;
+  const viewportBottom = stageHeight * zoom;
+  const boxTop = viewportBottom - boxHeight;
 
   const gridStep = 40 * boxScale; // 40 design px
   const majorEvery = 5;           // …and a brighter line every 200
@@ -206,6 +227,20 @@ const CanvasOverlay: React.FC<{ options: OverlayOptions }> = ({ options }) => {
               stroke="#22c55e" strokeWidth="1" strokeDasharray="2 5" strokeOpacity="0.8" />
           ))}
 
+          {/* Safe band: the height every device shows, measured up from the
+              bottom. Above the line only tall devices see anything. */}
+          {safeHeight < designHeight && (
+            <>
+              <rect x={stageLeft} y={boxTop} width={stageWidth}
+                height={Math.max(0, boxHeight * (1 - safeHeight / designHeight))}
+                fill="#ef4444" fillOpacity="0.10" />
+              <line
+                x1={stageLeft} y1={boxTop + boxHeight * (1 - safeHeight / designHeight)}
+                x2={stageLeft + stageWidth} y2={boxTop + boxHeight * (1 - safeHeight / designHeight)}
+                stroke="#22c55e" strokeWidth="1.5" strokeDasharray="5 4" strokeOpacity="0.9" />
+            </>
+          )}
+
           {/* Window height the canvas does not define — background only. */}
           {boxTop > 0 && (
             <rect x={0} y={0} width={screenWidth} height={boxTop}
@@ -231,7 +266,7 @@ const CanvasOverlay: React.FC<{ options: OverlayOptions }> = ({ options }) => {
    ═══════════════════════════════════════════ */
 const PovReadout: React.FC = () => {
   const {
-    zoom, heroFill, maxFill, designWidth, designHeight, screenWidth, screenHeight,
+    zoom, heroFill, maxFill, safeHeight, designWidth, designHeight, screenWidth, screenHeight,
     stageHeight, mode, nativeMode, isPreview, measured,
   } = useViewport();
 
@@ -252,28 +287,40 @@ const PovReadout: React.FC = () => {
   const overflowRight = bounds ? Math.round(bounds.right - designWidth * crop.end) : 0;
   const overflow = Math.max(overflowLeft, overflowRight) > 0;
 
+  // The vertical equivalent: how far an element pokes above the band that every
+  // device is guaranteed to show. This is what made the hero title disappear on
+  // a real phone while looking fine in the old preview.
+  const safeTop = designHeight - safeHeight;
+  const aboveSafe = bounds ? Math.round(safeTop - bounds.top) : 0;
+
   const rows: [string, string][] = [
     ['Canvas', `${designWidth} × ${designHeight}`],
     ['Window', `${screenWidth} × ${screenHeight}`],
     ['Scale', `${(zoom * 100).toFixed(1)}%`],
     ['Hero fill', heroFill > 1 ? `${heroFill.toFixed(3)}× (−${sideCrop}px/side)` : 'none'],
     ['Window height', `${Math.round(stageHeight)} design px`],
+    ['Safe band', `bottom ${safeHeight} of ${designHeight}`],
   ];
 
   const status = !measured
     ? { tone: '#a16207', bg: '#fefce8', text: 'Measuring the window…' }
-    : isPreview
-      ? { tone: '#0369a1', bg: '#eff6ff', text: `Emulating the ${mode} canvas — this device is really ${nativeMode}.` }
-      : overflow
-        ? {
-          tone: '#b91c1c', bg: '#fef2f2',
-          text: `An element sits ${Math.max(overflowLeft, overflowRight)}px past the ${overflowLeft >= overflowRight ? 'left' : 'right'} crop line. Visitors with taller windows will see it cut — turn on the Canvas overlay and move it inside the green lines.`,
-        }
-        : topCrop > 0
-          ? { tone: '#a16207', bg: '#fefce8', text: `Short window: the top ${topCrop}px of the canvas is off-screen. Only background lives up there.` }
-          : spare > 0
-            ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
-            : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone, ${sideCrop}px of background cropped per side.` };
+    : aboveSafe > 0
+      ? {
+        tone: '#b91c1c', bg: '#fef2f2',
+        text: `An element reaches ${aboveSafe}px above the safe band. Only the tallest devices show it — on a short phone it is cut off. Turn on the Canvas overlay and drag it below the green line.`,
+      }
+      : isPreview
+        ? { tone: '#0369a1', bg: '#eff6ff', text: `Emulating the ${mode} canvas — this device is really ${nativeMode}. What fits the safe band fits every device.` }
+        : overflow
+          ? {
+            tone: '#b91c1c', bg: '#fef2f2',
+            text: `An element sits ${Math.max(overflowLeft, overflowRight)}px past the ${overflowLeft >= overflowRight ? 'left' : 'right'} crop line. Visitors with taller windows will see it cut — turn on the Canvas overlay and move it inside the green lines.`,
+          }
+          : topCrop > 0
+            ? { tone: '#a16207', bg: '#fefce8', text: `The top ${topCrop}px of the canvas is off-screen here — everything that matters is inside the safe band, so this is background only.` }
+            : spare > 0
+              ? { tone: '#a16207', bg: '#fefce8', text: `Filled as far as the crop budget allows — ${spare}px of background still shows above. A squarer window can't be filled without cutting into the design.` }
+              : { tone: '#15803d', bg: '#f0fdf4', text: `POV locked, screen filled. Same composition for everyone${sideCrop ? `, ${sideCrop}px of background cropped per side` : ''}.` };
 
   return (
     <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
@@ -606,6 +653,30 @@ export const VisualEditorPanel: React.FC = () => {
                   </SegmentedButton>
                 ))}
               </div>
+
+              {/* Which phone the mobile canvas is checked against. Defaults to
+                  the shortest — what fits there fits every handset. */}
+              {isMobileViewport && (
+                <>
+                  <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                    {PREVIEW_DEVICES.map(device => (
+                      <SegmentedButton
+                        key={device.key}
+                        active={viewport.previewDevice === device.key}
+                        onClick={() => { setSelectedElement(null); setPreviewDevice(device.key); }}
+                        title={`${CANVAS.mobile.width}×${device.height} — ${device.hint}`}
+                      >
+                        {device.label}
+                      </SegmentedButton>
+                    ))}
+                  </div>
+                  <p style={{ margin: '6px 0 0', fontSize: '9px', color: '#999', lineHeight: 1.45 }}>
+                    Phones show {CANVAS.mobile.safeHeight}–744 of the {CANVAS.mobile.height}px canvas,
+                    measured up from the bottom. Keep everything below the green line and every
+                    phone shows the same thing.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* ── POV readout ── */}
