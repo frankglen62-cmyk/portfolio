@@ -1,219 +1,72 @@
-import React, { useEffect } from 'react';
-import { useVisualEditor } from '../../contexts/VisualEditorContext';
+import React, { useEffect, useState } from 'react';
+import { useVisualEditor, type ElementKind } from '../../contexts/VisualEditorContext';
 import { useViewport } from '../../hooks/useViewport';
-import { getRenderScale } from '../../lib/viewportStage';
 
 interface EditableElementProps {
+  /** Desktop id. The mobile canvas edits `${id}Mobile` when that entry exists. */
   id: string;
-  label?: string;
+  /** What the panel calls it. */
+  label: string;
+  kind?: ElementKind;
+  /** False when the element's stacking is not driven by the saved zIndex. */
+  canLayer?: boolean;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  /**
-   * Kept for call-site compatibility. It used to opt an element into
-   * window-height-relative placement; the canvas is now fixed in both axes, so
-   * every element is positioned in design pixels and the flag does nothing.
-   */
-  responsivePosition?: boolean;
 }
 
 /**
- * Pointer capture keeps a drag alive when the finger crosses the portrait or
- * the panel, but it throws if the pointer is already gone — never let that
- * abort the drag itself.
+ * Wraps one piece of the hero so the editor can move, resize and inspect it.
+ *
+ * It carries no editor UI of its own any more — no outline, no handles, no
+ * pointer handlers. Those were drawn INSIDE the element, so they inherited its
+ * scale and rotation, sat underneath the portrait, and had to fight z-index to
+ * stay grabbable. They now live in the overlay, which is drawn outside the
+ * zoomed stage in real screen pixels, so a handle is always the same size and
+ * always on top. All this component does is:
+ *
+ *   1. apply the saved offset / scale / rotation / opacity, and
+ *   2. tell the editor it exists, so the panel can list and measure it.
+ *
+ * That means the composition in edit mode is byte-for-byte the composition a
+ * visitor sees — which is the whole point of measuring against it.
  */
-const capturePointer = (event: React.PointerEvent<Element>) => {
-  try {
-    event.currentTarget.setPointerCapture(event.pointerId);
-  } catch {
-    /* pointer already released — dragging still works via window listeners */
-  }
-};
-
 export const EditableElement: React.FC<EditableElementProps> = ({
-  id, label, children, className, style,
+  id, label, kind = 'text', canLayer = true, children, className, style,
 }) => {
-  // The saved reference canvas IS the render canvas now, so an X of 120 means
-  // 120 design pixels on every screen — the position can no longer drift.
   const { mode } = useViewport();
-  const isMobileViewport = mode === 'mobile';
-  const {
-    layout, editMode, selectedElement, setSelectedElement,
-    elementRefs: elementRefsRef, scaleState: scaleStateRef,
-    panelOpen, setPanelOpen, registerElementLabel, startElementDrag,
-  } = useVisualEditor();
+  const { layout, register, unregister } = useVisualEditor();
+  const [node, setNode] = useState<HTMLDivElement | null>(null);
 
-  const mobileId      = `${id}Mobile`;
-  const activeId      = isMobileViewport && layout[mobileId] ? mobileId : id;
-  const config        = layout[activeId] || layout[id] || { x: 0, y: 0 };
-  const isSelected    = editMode && selectedElement === activeId;
-  const hasScale      = 'scale' in config;
-  const hasMobileConfig = Boolean(layout[mobileId]);
-  const isCharacterImage = id === 'characterImage';
-  const elementScale  = config.scale ?? 1;
-  const selectionUiScale = 1 / elementScale;
+  const mobileId = `${id}Mobile`;
+  const activeId = mode === 'mobile' && layout[mobileId] ? mobileId : id;
+  const config = layout[activeId] ?? layout[id] ?? { x: 0, y: 0 };
 
-  // ─── Coordinate offsets ────────────────────────────────────────────────────
-  // Both axes are plain DESIGN pixels. The canvas is a fixed box in both
-  // directions now, so an offset of 120 lands on exactly the same spot of the
-  // composition on a 4K monitor, a laptop, a restored-down window and a phone.
-  // (Y used to be re-derived from the real window height, which is precisely
-  // what made the layout drift between screen shapes.)
-  const xOffset = `${config.x || 0}px`;
-  const yOffset = `${config.y || 0}px`;
-
-  const transformStyle = {
-    '--editable-x':        xOffset,
-    '--editable-y':        yOffset,
-    '--editable-rotation': `${config.rotation || 0}deg`,
-    '--editable-scale':    `${config.scale ?? 1}`,
-    '--editable-opacity':  `${config.opacity ?? 1}`,
-  } as React.CSSProperties;
-
-  // ─── Label registration ────────────────────────────────────────────────────
   useEffect(() => {
-    if (label) registerElementLabel(id, label);
-    if (label && hasMobileConfig) registerElementLabel(mobileId, `${label} (Mobile)`);
-  }, [id, label, hasMobileConfig, mobileId, registerElementLabel]);
+    if (!node) return;
+    register({ id, activeId, label, kind, canLayer, node });
+    return () => unregister(activeId);
+  }, [node, id, activeId, label, kind, canLayer, register, unregister]);
 
-  // ─── Scale-handle pointer down ─────────────────────────────────────────────
-  // Drag initiation is handled GLOBALLY in VisualEditorContext so elements
-  // can be moved even when they are behind the character photo.
-  // Scale handles are the only thing that still capture events on the element.
-  const handleScalePointerDown = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    capturePointer(e);
-    if (!panelOpen) setPanelOpen(true);
-    scaleStateRef.current = {
-      active: true,
-      id: activeId,
-      startY: e.clientY,
-      origScale: config.scale || 1,
-      zoom: getRenderScale(e.currentTarget),
-    };
-  };
-
-  const handleElementPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!editMode) return;
-
-    // A selected element is now draggable directly. Capturing the pointer is
-    // essential on touch devices: the drag keeps receiving events even if the
-    // finger moves over the portrait, panel, or another layered element.
-    e.preventDefault();
-    e.stopPropagation();
-    capturePointer(e);
-    setSelectedElement(activeId);
-    if (!panelOpen) setPanelOpen(true);
-    startElementDrag(activeId, e.nativeEvent);
-  };
-
-  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div
-      ref={el => {
-        elementRefsRef.current[activeId] = el;
-        // Drop the ref on unmount so alignment guides never snap to an element
-        // that belongs to the other canvas.
-        return () => { delete elementRefsRef.current[activeId]; };
-      }}
+      ref={setNode}
       data-editable-id={id}
       data-active-editable-id={activeId}
-      data-edit-mode={editMode ? 'true' : 'false'}
       className={className}
-      onPointerDown={handleElementPointerDown}
-      onClick={e => {
-        if (editMode) e.stopPropagation();
-      }}
       style={{
         ...style,
-        ...transformStyle,
-        transform: 'translate(var(--editable-x), var(--editable-y)) rotate(var(--editable-rotation)) scale(var(--editable-scale))',
-        // Let selected elements receive direct touch/mouse input in edit mode.
-        // Their selected hero layer is raised above the portrait, which fixes
-        // controls that were previously visible but impossible to grab.
-        pointerEvents: editMode ? 'auto' : style?.pointerEvents,
-        position:  'relative',
-        opacity:   'var(--editable-opacity)',
-        // gets visual feedback (even though actual drag starts from any canvas press).
-        cursor: (editMode && isSelected) ? 'grab' : undefined,
-        zIndex: isSelected ? 9900 : undefined,
-        outline:       isSelected && !isCharacterImage ? '2px solid #fdb466' : 'none',
-        outlineOffset: '6px',
-        userSelect:    editMode ? 'none' : undefined,
-        touchAction:   editMode ? 'none' : 'auto',
+        position: 'relative',
+        // Both axes are plain DESIGN pixels: an offset of 120 lands on exactly
+        // the same spot of the composition on a 4K monitor, a laptop, a
+        // restored-down window and a phone.
+        transform: `translate(${config.x || 0}px, ${config.y || 0}px)`
+          + ` rotate(${config.rotation || 0}deg)`
+          + ` scale(${config.scale ?? 1})`,
+        opacity: config.opacity ?? 1,
       }}
     >
       {children}
-
-      {/* ─── Scale handles (corner squares when element is selected) ─── */}
-      {isSelected && hasScale && (
-        <>
-          {[
-            { top: '-8px', left:  '-8px' },
-            { top: '-8px', right: '-8px' },
-            { bottom: '-8px', left:  '-8px' },
-            { bottom: '-8px', right: '-8px' },
-          ].map((pos, i) => (
-            <div
-              key={i}
-              onPointerDown={handleScalePointerDown}
-              style={{
-                position: 'absolute',
-                ...Object.fromEntries(
-                  Object.entries(pos).map(([k, v]) => [k, `${parseFloat(v) * selectionUiScale}px`])
-                ),
-                width:  `${14 * selectionUiScale}px`,
-                height: `${14 * selectionUiScale}px`,
-                background:   '#fdb466',
-                border:       `${2 * selectionUiScale}px solid white`,
-                borderRadius: `${3 * selectionUiScale}px`,
-                cursor: 'nwse-resize',
-                zIndex: 10001,           // above the drag overlay in VisualEditorPanel
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                // Explicitly re-enable pointer events for the handle even though
-                // the parent wrapper has pointer-events:none.
-                pointerEvents: 'auto',
-                touchAction:   'none',
-              }}
-            />
-          ))}
-
-          {/* ─── Position + Scale label ─── */}
-          <div style={{
-            position: 'absolute',
-            top: `${-28 * selectionUiScale}px`,
-            left: '50%',
-            transform: `translateX(-50%) scale(${selectionUiScale})`,
-            transformOrigin: 'bottom center',
-            background: '#fdb466', color: '#1e1e1e',
-            borderRadius: '4px', padding: '2px 8px',
-            fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-            pointerEvents: 'none',
-            zIndex: 10001,
-          }}>
-            X: {config.x || 0}  Y: {config.y || 0}
-            {hasScale ? ` | Scale: ${(config.scale || 1).toFixed(2)}` : ''}
-          </div>
-        </>
-      )}
-
-      {/* ─── Position label (non-scaleable elements) ─── */}
-      {isSelected && !hasScale && (
-        <div style={{
-          position: 'absolute', top: '-28px', left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#fdb466', color: '#1e1e1e',
-          borderRadius: '4px', padding: '2px 8px',
-          fontSize: '10px', fontWeight: 700, whiteSpace: 'nowrap',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          pointerEvents: 'none',
-          zIndex: 10001,
-        }}>
-          X: {config.x || 0}  Y: {config.y || 0}
-        </div>
-      )}
     </div>
   );
 };

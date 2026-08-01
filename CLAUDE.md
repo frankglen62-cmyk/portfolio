@@ -164,23 +164,82 @@ bug; it resolves the moment the tab is focused. Do not go looking for a
 rendering fault when a screenshot of an unfocused tab comes out black — check
 `visibilityState` first.
 
-## Visual editor (`src/components/editor/`)
+## Hero editor (`src/components/editor/`)
 
-Open with the gear button; it lives **outside** the stage so it stays at true
-screen size at any zoom. The panel is its own bundle chunk, fetched once the
-browser goes idle, so a visitor never downloads Frank's authoring tool on the
-critical path — the gear appears a beat after the page, which is the point.
+Open with the gear button, on either canvas. Everything the editor draws lives
+**outside** the stage, in real screen pixels, so the panel stays readable and a
+resize handle stays 12 physical pixels no matter how far the page is zoomed. It
+is its own bundle chunk (~30 kB), fetched once the browser goes idle, so a
+visitor never downloads Frank's authoring tool on the critical path — the gear
+appears a beat after the page, which is the point.
 
-- Saved `x` / `y` are **design pixels on the active canvas**, both axes. What
-  you set is what everyone gets.
-- Elements ending in `Mobile` belong to the mobile canvas; the panel filters
-  the list to whichever canvas is active.
+| File                 | Job                                                     |
+| -------------------- | ------------------------------------------------------- |
+| `measure.ts`         | rendered rect → design pixels on the active canvas       |
+| `EditableElement.tsx`| applies the saved transform, registers itself. No UI.    |
+| `EditorRoot.tsx`     | hit-testing, drag, resize, snapping, all overlays        |
+| `EditorPanel.tsx`    | the panel, the gear, the debugging readout               |
+| `stage.ts`           | the live editing state the overlay and panel share       |
+
+### Everything shown is measured, never assumed
+
+The panel shows **absolute canvas coordinates read off the live DOM**:
+
+```
+canvasX = (element.getBoundingClientRect().left - canvasBox.left) / scale
+```
+
+`scale` is measured from `.canvas-box` itself, so it already includes the page
+zoom *and* `--hero-fill`. Click the FRANK title and the panel says `x 387` when
+the title is 387 design pixels from the canvas's left edge — on every device.
+
+The saved `x` / `y` in `layout.json` are still **offsets** from wherever CSS put
+an element (that is what keeps the hero's own rules working), and they are never
+displayed. Typing `200` into X sets `offset += 200 - measured`, so the element
+lands exactly on 200. The old panel showed the raw offset instead, which is why
+a title sitting dead centre could read `x: 649, y: -447` and mean nothing.
+
+Because of this, edit mode changes **nothing** about the composition — no raised
+z-index, no outlines injected into elements. What is measured is what ships.
+
+- **Selecting**: a transparent capture layer takes every press and hit-tests the
+  registry, picking the **smallest** box under the pointer — so a title behind
+  the portrait is selected by clicking straight at it. Elements are also listed
+  in the panel by name.
+- **Moving**: drag the element, the arrow-pad, arrow keys (Shift = ×5, step
+  1/5/10/25 design px), or type X/Y. Snapping to canvas edges/centre and to
+  other elements is on by default; hold **Alt** to override.
+- **Resizing**: the four corner handles change `scale` uniformly, anchored on
+  the opposite corner. The anchor is held by *measuring* the corner every frame
+  and correcting, not by predicting it — which is why it also works for the
+  portrait, whose `transform-origin` is `bottom`.
+- **Arranging**: In front / Behind portrait, or a raw z. The About title says so
+  instead: its stacking belongs to its panel.
+- The About panel is `visibility: hidden` until the scroll timeline reveals it,
+  so selecting the About title **makes it visible** — otherwise it could never
+  be edited.
 - The panel has **no canvas switch**. It edits whichever canvas the device is
   on, so to edit the mobile layout put the browser into device emulation — see
-  *Checking the mobile canvas* above.
-- **Overlays**: canvas bounds (plus the band of window height the canvas does
-  not define), the green crop lines, a 40-design-px grid, and centre lines.
-- Arrow keys nudge the selection; Shift = ×5; the step is 1/5/10/25 design px.
+  *Checking the mobile canvas* above. It is draggable and collapsible on both,
+  and fades to 30% while you drag so it never hides what you are moving.
+- `Ctrl/Cmd+S` saves. `Esc` deselects, then closes.
+
+### Debugging mode
+
+A switch inside the panel, not a separate tool. It adds:
+
+- **Overlays** — Canvas (bounds, the green crop lines, the safe band, and the
+  band of window height the canvas does not define), a 40-design-px Grid, Centre
+  lines, and Boxes (every editable element outlined and named).
+- **Readout** — canvas, window, scale, canvas fit, window height in design px,
+  safe band, live pointer position in canvas coordinates, and the selected box's
+  x/y/w/h, right/bottom, and on-screen position.
+- **A verdict** — green when every device sees this exact composition, red with
+  the number of pixels when something reaches past a crop line or above the safe
+  band. The bounds it checks come from the same measurements, taken 5×/s.
+
+### Saving
+
 - Save writes to `localStorage`, and to `src/config/layout.json` +
   `public/layout.json` through the dev-server plugin in `vite.config.ts`.
 - **Load** goes the other way and never touches the network in a deployed build:
@@ -202,6 +261,24 @@ GSAP ScrollTrigger caches pixel measurements. `App.tsx` subscribes to
 `subscribeStageRelayout()` and calls `ScrollTrigger.refresh()` (debounced)
 whenever the stage rescales — without it, resizing the window leaves the About
 panel and other scroll-driven elements stuck at stale progress.
+
+## The video-in-text title (`src/components/ui/video-text.tsx`)
+
+"MY PROJECT" is a video showing through SVG-masked text. Two rules keep its
+edges clean, and both were learned from a bright line running down the side of
+the block:
+
+- **Nothing may be painted at the `<foreignObject>` boundary.** A foreignObject
+  is rasterised as its own layer, and the stage's CSS `zoom` puts that layer's
+  bounds on fractional device pixels — so its outermost row can survive the mask
+  and draw a 1px line, on whichever edge happens to land on a half pixel. The
+  fallback fill is therefore a plain SVG `<rect>` (masked in the same raster, cut
+  exactly), the foreignObject and its wrapper are transparent, and the video is
+  clipped `EDGE_GUARD` px inside it. The guard is added back onto the video's
+  height, so the picture inside the letters is unchanged.
+- **The mask is `maskUnits="userSpaceOnUse"` with a region 10% past the
+  viewport.** The default `objectBoundingBox` region ends just past each masked
+  element's own box, which is one more edge to get wrong.
 
 ## Load performance
 

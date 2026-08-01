@@ -26,7 +26,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
   const isMobileViewport = canvasMode === 'mobile';
   const [aboutContentActive, setAboutContentActive] = React.useState(false);
   const ease = [0.16, 1, 0.3, 1] as const;
-  const { layout, configLoaded, editMode, selectedElement } = useVisualEditor();
+  const { layout, configLoaded, editMode, selectedId } = useVisualEditor();
   const getLayout = useCallback((id: string) => {
     const mobileId = `${id}Mobile`;
     const config = isMobileViewport && layout[mobileId] ? layout[mobileId] : layout[id];
@@ -43,17 +43,18 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
     };
   }, [isMobileViewport, layout]);
 
-  const getZIndex = useCallback((id: string, normal: string, edit: string) => {
-    if (!editMode) return normal;
-    const activeId = isMobileViewport ? `${id}Mobile` : id;
-    return selectedElement === activeId ? 'z-[9999]' : edit;
-  }, [editMode, isMobileViewport, selectedElement]);
-
+  // Stacking is NEVER changed for edit mode. The editor draws its selection and
+  // handles outside the stage, so it does not need the element raised — and the
+  // composition Frank edits stays byte-for-byte the one a visitor sees, which is
+  // the whole reason its coordinates can be trusted.
   const getElementLayer = useCallback((id: string, fallback: number) => {
     const activeId = isMobileViewport ? `${id}Mobile` : id;
-    if (editMode && selectedElement === activeId) return 9900;
     return layout[activeId]?.zIndex ?? fallback;
-  }, [editMode, isMobileViewport, layout, selectedElement]);
+  }, [isMobileViewport, layout]);
+
+  // The About panel is hidden until the scroll timeline reveals it, so its title
+  // could never be edited. Selecting it in the editor brings the panel up.
+  const aboutSelected = editMode && (selectedId === 'aboutTitle' || selectedId === 'aboutTitleMobile');
 
   useLayoutEffect(() => {
     // Skip GSAP entirely in edit mode — its inline transforms fight EditableElement.
@@ -216,7 +217,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
 
         {/* One portrait layer is retained for the entire transition. */}
         <div
-          className={`hero-portrait absolute bottom-0 left-1/2 ${getZIndex('characterImage', 'z-20', 'z-[70]')} h-[calc(74*var(--vh))] will-change-transform`}
+          className="hero-portrait absolute bottom-0 left-1/2 z-20 h-[calc(74*var(--vh))] will-change-transform"
           style={{ zIndex: getElementLayer('characterImage', 20) }}
         >
           <div ref={portraitRef} className="h-full will-change-transform">
@@ -236,7 +237,7 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               className="h-full"
             >
               <div ref={portraitPoseRef} className="h-full origin-bottom will-change-transform">
-              <EditableElement id="characterImage" responsivePosition className="h-full" style={{ transformOrigin: 'bottom' }}>
+              <EditableElement id="characterImage" label="Portrait" kind="image" className="h-full" style={{ transformOrigin: 'bottom' }}>
                 <img
                   src={`${import.meta.env.BASE_URL}frank-profile.webp`}
                   alt="Frank Glen Martin"
@@ -259,10 +260,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
 
 
         <div
-          className={`hero-scroll-out hero-badge-wrap absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] ${getZIndex('availableBadge', 'z-30', 'z-[80]')} hidden md:block`}
+          className="hero-scroll-out hero-badge-wrap absolute left-[4%] md:left-[5%] lg:left-[8%] top-[47%] md:top-[50%] z-30 hidden md:block"
           style={{ zIndex: getElementLayer('availableBadge', 30) }}
         >
-          <EditableElement id="availableBadge" responsivePosition>
+          <EditableElement id="availableBadge" label="Available badge" kind="block">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -280,10 +281,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className={`hero-scroll-out hero-specialization-wrap absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] ${editMode ? 'z-[80]' : 'z-30'} max-w-[200px] text-right hidden md:block`}
+          className="hero-scroll-out hero-specialization-wrap absolute right-[4%] md:right-[5%] lg:right-[8%] top-[46%] md:top-[48%] z-30 max-w-[200px] text-right hidden md:block"
           style={{ zIndex: getElementLayer('specializationText', 30) }}
         >
-          <EditableElement id="specializationText" responsivePosition>
+          <EditableElement id="specializationText" label="Specialization ticker">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -297,34 +298,15 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
               }}
             >
               <BlurredTextTicker isMobile={isMobileViewport} />
-              {editMode && !isMobileViewport && (
-                <WordPullUp
-                  words="Ecommerce support"
-                  className="sr-only"
-                  style={{
-                    fontSize: getLayout('specializationText')?.fontSize, fontWeight: getLayout('specializationText')?.fontWeight,
-                    letterSpacing: getLayout('specializationText')?.letterSpacing, lineHeight: getLayout('specializationText')?.lineHeight,
-                    color: getLayout('specializationText')?.color,
-                  }}
-                  wrapperFramerProps={{
-                    hidden: { opacity: 0 },
-                    show: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.9 } }
-                  }}
-                  framerProps={{
-                    hidden: { y: 10, opacity: 0 },
-                    show: { y: 0, opacity: 1 }
-                  }}
-                />
-              )}
             </motion.div>
           </EditableElement>
         </div>
 
         <div
-          className={`hero-scroll-out hero-identity-wrap absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] ${getZIndex('iAmFrankText', 'z-10', 'z-[60]')} transform-gpu`}
+          className="hero-scroll-out hero-identity-wrap absolute bottom-[13%] md:bottom-[10%] left-[4%] md:left-[5%] lg:left-[8%] z-10 transform-gpu"
           style={{ zIndex: getElementLayer('iAmFrankText', 10) }}
         >
-          <EditableElement id="iAmFrankText" responsivePosition>
+          <EditableElement id="iAmFrankText" label="FRANK title">
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -343,10 +325,10 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         </div>
 
         <div
-          className={`hero-scroll-out hero-role-wrap absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] ${getZIndex('roleTitleText', 'z-10', 'z-[60]')} text-right transform-gpu`}
+          className="hero-scroll-out hero-role-wrap absolute bottom-[13%] md:bottom-[10%] right-[4%] md:right-[5%] lg:right-[8%] z-10 text-right transform-gpu"
           style={{ zIndex: getElementLayer('roleTitleText', 10) }}
         >
-          <EditableElement id="roleTitleText" responsivePosition>
+          <EditableElement id="roleTitleText" label="Role title">
             <motion.h2
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -367,13 +349,13 @@ export const Hero: React.FC<HeroProps> = ({ isLoaded }) => {
         {/* Editorial About state */}
         <div
           ref={aboutRef}
-          className="hero-about-panel invisible absolute z-30 top-[10%] bottom-[7%] left-[6%] right-[6%] md:top-[14%] md:bottom-[8%] md:left-[51%] md:right-[6%] lg:left-[52%] lg:right-[8%] flex flex-col justify-start md:justify-center text-white"
+          className={`hero-about-panel ${aboutSelected ? 'visible' : 'invisible'} absolute z-30 top-[10%] bottom-[7%] left-[6%] right-[6%] md:top-[14%] md:bottom-[8%] md:left-[51%] md:right-[6%] lg:left-[52%] lg:right-[8%] flex flex-col justify-start md:justify-center text-white`}
         >
           <div className="about-scroll-in font-ui text-[9px] md:text-[10px] font-semibold uppercase tracking-[0.32em] mb-3 md:mb-5 text-white/50">
             Who I am
           </div>
 
-          <EditableElement id="aboutTitle" label="About Title" responsivePosition>
+          <EditableElement id="aboutTitle" label="About title" canLayer={false}>
             <WordPullUp
               words="Ecommerce VA for ambitious sellers"
               className="about-scroll-in font-heading font-semibold tracking-[-0.045em] leading-[0.92] text-[clamp(2rem,calc(6.2*var(--vw)),5.6rem)] mb-5 md:mb-8"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { gsap } from 'gsap';
-import { VisualEditorProvider, useVisualEditor } from './contexts/VisualEditorContext';
+import { VisualEditorProvider } from './contexts/VisualEditorContext';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Navbar } from './components/layout/Navbar';
 import { SideNav } from './components/layout/SideNav';
@@ -25,9 +25,7 @@ gsap.registerPlugin(ScrollTrigger);
 // on it before the hero could paint. It is now its own chunk, fetched once the
 // browser has gone idle. The gear button appears a beat later than the page; the
 // page no longer waits for the gear button.
-const VisualEditorPanel = lazy(() =>
-  import('./components/editor/VisualEditorPanel').then(m => ({ default: m.VisualEditorPanel }))
-);
+const EditorRoot = lazy(() => import('./components/editor/EditorRoot'));
 
 /** True once the page has finished its initial work and can afford a side quest. */
 function useIdle(): boolean {
@@ -85,25 +83,17 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { editMode, isDragging, setSelectedElement } = useVisualEditor();
   const isHeroIntro = useHeroIntro();
   const isSideNavVisible = useSideNavVisibility();
   const editorReady = useIdle();
 
   return (
-    <div
-      className="relative"
-      onClick={() => {
-        if (editMode && !isDragging) {
-          setSelectedElement(null);
-        }
-      }}
-    >
+    <div className="relative">
       {/* Editor chrome lives OUTSIDE the stage so it stays at true screen size
           and readable no matter how far the page canvas is scaled. */}
       {editorReady && (
         <Suspense fallback={null}>
-          <VisualEditorPanel />
+          <EditorRoot />
         </Suspense>
       )}
 
