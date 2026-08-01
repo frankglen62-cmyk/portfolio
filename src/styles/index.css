@@ -362,64 +362,74 @@
       text-shadow: 0 2px 12px rgba(4, 8, 16, 0.7), 0 1px 2px rgba(4, 8, 16, 0.9);
     }
 
+    /* The About state is the whole second screenful on a phone, so it is sized
+       to USE that screenful: the panel takes almost the full canvas and every
+       block inside is stepped up to match. The type scale below was measured
+       against the 832 canvas — content lands at ~700 of the 770 design px the
+       insets leave, so it fills the screen without pushing anything out of the
+       safe band. Desktop is untouched: every value here is inside
+       [data-canvas="mobile"]. */
     .hero-about-panel {
-      top: 6.5% !important;
+      top: 4% !important;
       left: 5.5% !important;
       right: 5.5% !important;
-      bottom: 5% !important;
+      bottom: 3.5% !important;
       justify-content: center !important;
       max-width: none;
       z-index: 31 !important;
     }
 
     .hero-about-panel > .about-scroll-in:first-child {
-      margin-bottom: 8px !important;
-      font-size: 8px !important;
+      margin-bottom: 12px !important;
+      font-size: 10px !important;
       letter-spacing: 0.28em !important;
     }
 
-    .hero-about-panel [data-editable-id="aboutTitle"] h2 {
-      margin-bottom: 18px !important;
+    /* WordPullUp renders a motion.div, not a heading — an `h2` selector here
+       matches nothing, which is why this margin used to have no effect. */
+    .hero-about-panel [data-editable-id="aboutTitle"] > div {
+      margin-bottom: 26px !important;
     }
 
     .hero-about-panel > .about-scroll-in:nth-child(3) {
       grid-template-columns: repeat(3, 1fr);
       gap: 0;
-      padding-block: 14px !important;
-      margin-bottom: 18px !important;
+      padding-block: 20px !important;
+      margin-bottom: 26px !important;
     }
 
     .hero-about-panel > .about-scroll-in:nth-child(3) > div {
-      padding-inline: 8px !important;
+      padding-inline: 9px !important;
     }
 
     .hero-about-panel > .about-scroll-in:nth-child(3) strong {
-      font-size: 1.65rem !important;
+      font-size: 2.2rem !important;
     }
 
     .hero-about-panel > .about-scroll-in:nth-child(3) span {
-      font-size: 7px !important;
+      font-size: 8.5px !important;
+      letter-spacing: 0.1em !important;
     }
 
     .hero-about-panel p {
-      font-size: clamp(13px, calc(3.45 * var(--vw)), 14px) !important;
-      line-height: 1.55 !important;
-      margin-bottom: 18px !important;
+      font-size: clamp(15px, calc(4.3 * var(--vw)), 16px) !important;
+      line-height: 1.58 !important;
+      margin-bottom: 26px !important;
     }
 
     .hero-about-panel .about-capabilities {
       display: grid !important;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0;
-      margin-bottom: 18px;
+      margin-bottom: 26px;
       border-top: 1px solid rgba(30, 30, 30, 0.16);
     }
 
     .hero-about-panel .about-capabilities li {
-      padding: 9px 4px 8px 0;
+      padding: 12px 4px 11px 0;
       border-bottom: 1px solid rgba(30, 30, 30, 0.12);
       font-family: var(--font-ui);
-      font-size: 8px;
+      font-size: 9.5px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -431,7 +441,12 @@
     }
 
     .hero-about-panel a {
-      padding: 11px 18px !important;
+      padding: 14px 22px !important;
+      font-size: 12px !important;
+    }
+
+    /* "E-commerce - Shopify support", under the button */
+    .hero-about-panel > .about-scroll-in:last-child > span {
       font-size: 10px !important;
     }
   }

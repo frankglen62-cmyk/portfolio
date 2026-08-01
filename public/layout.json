@@ -116,15 +116,15 @@
     "height": "100%"
   },
   "availableBadgeMobile": {
-    "x": -7,
-    "y": 30,
+    "x": -41,
+    "y": -10,
     "scale": 1.05,
     "opacity": 1,
     "rotation": 0
   },
   "specializationTextMobile": {
-    "x": 6,
-    "y": 96,
+    "x": 17,
+    "y": 93,
     "fontSize": "8.5px",
     "fontWeight": 500,
     "letterSpacing": "0em",
@@ -133,7 +133,7 @@
     "color": "#e0e0e0",
     "rotation": 0,
     "zIndex": 90,
-    "scale": 0.95
+    "scale": 1.45
   },
   "iAmFrankTextMobile": {
     "x": 117,
@@ -148,8 +148,8 @@
     "rotation": 0
   },
   "roleTitleTextMobile": {
-    "x": 35,
-    "y": -54,
+    "x": 3,
+    "y": -59,
     "scale": 1.75,
     "fontSize": "clamp(1.05rem,5.1vw,1.35rem)",
     "fontWeight": 700,
@@ -163,7 +163,7 @@
   "aboutTitleMobile": {
     "x": 0,
     "y": 0,
-    "fontSize": "clamp(2.45rem,11vw,2.75rem)",
+    "fontSize": "clamp(2.85rem,12.9vw,3rem)",
     "fontWeight": 700,
     "letterSpacing": "-0.03em",
     "lineHeight": "0.92",
