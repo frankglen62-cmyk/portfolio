@@ -185,9 +185,16 @@ critical path — the gear appears a beat after the page, which is the point.
   `public/layout.json` through the dev-server plugin in `vite.config.ts`.
 - **Load** goes the other way and never touches the network in a deployed build:
   `src/config/layout.json` is imported into the bundle as `SAVED_LAYOUT`, so the
-  hero renders at its final coordinates on the first frame. `localStorage` still
-  wins over it. Only `npm run dev` re-reads the file, through
-  `/api/layout-config`, and only after the paint.
+  hero renders at its final coordinates on the first frame. Only `npm run dev`
+  re-reads the file, through `/api/layout-config`, and only after the paint.
+- **Which copy wins depends on which one can be newer.** In a deployed build
+  `localStorage` outranks the file — nothing there can write the file, so an edit
+  made on that device is the freshest thing available (the blue *Saved here
+  only*). Under `npm run dev` it is the other way round: a save writes the file,
+  so the file is by definition the newer copy and `localStorage` is ignored
+  entirely. Without that, a hand-edit to `layout.json` was invisible on the one
+  machine that can actually save — reloaded and reloaded and never applied,
+  because a months-old browser copy kept overriding it.
 
 ## Scroll animations
 

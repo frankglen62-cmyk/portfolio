@@ -110,6 +110,11 @@ const LS_KEY = 'frankportfolio-layout-v2';
  * ever changes by a deploy, so it is compiled in instead.
  */
 function initialLayout(): LayoutConfig {
+  // Under `npm run dev` the file is the authority (see the fetch below), so the
+  // first frame paints it directly instead of flashing this browser's older
+  // localStorage copy for a moment and then correcting itself.
+  if (import.meta.env.DEV) return SAVED_LAYOUT;
+
   try {
     // An edit made on this very browser still outranks the built-in layout.
     const raw = localStorage.getItem(LS_KEY);
@@ -194,9 +199,17 @@ export const VisualEditorProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // The initial layout is already correct (see initialLayout). The dev server is
   // the one place src/config/layout.json can change without a rebuild, so only
   // a dev build asks it for a fresher copy — and even then, after the paint.
+  //
+  // In dev the FILE wins over this browser's localStorage, which is the opposite
+  // of everywhere else. Under `npm run dev` a save writes the file (green "Saved
+  // to file"), so the file is the newer of the two by definition — while the
+  // stale localStorage copy was silently outranking it, which is why an edit to
+  // layout.json could be reloaded and reloaded and never show up. Off the dev
+  // server there is nothing to write the file, so localStorage stays the
+  // authority (that is the blue "Saved here only" path, e.g. editing from a
+  // phone against `vite preview`).
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    if (localStorage.getItem(LS_KEY)) return; // a local edit outranks the file
 
     let cancelled = false;
     fetch('/api/layout-config')
