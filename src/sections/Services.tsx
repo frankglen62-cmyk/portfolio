@@ -1,6 +1,17 @@
 import React, { useRef } from 'react';
 import { motion, useScroll, useTransform, useSpring, MotionValue } from 'framer-motion';
 import { ScrollReveal } from '../components/animations/ScrollReveal';
+import { useIsMobileCanvas } from '../hooks/useViewport';
+
+/**
+ * How many canvas-viewport-heights of scrolling the whole stack takes.
+ *
+ * Desktop is unchanged. A phone has to move the same six cards with a thumb
+ * rather than a wheel, and at 90 that was ~600 CSS px of dragging per card —
+ * two full flicks to see the next one. 50 puts a card change inside one
+ * comfortable swipe.
+ */
+const TRACK_PER_CARD = { desktop: 90, mobile: 50 } as const;
 
 const services = [
   {
@@ -54,7 +65,8 @@ const ScrollLinkedCard: React.FC<{
   service: typeof services[0];
   index: number;
   currentIndex: MotionValue<number>;
-}> = ({ service, index, currentIndex }) => {
+  isMobile: boolean;
+}> = ({ service, index, currentIndex, isMobile }) => {
   const offsetIndex = useTransform(currentIndex, (current) => index - current);
 
   // yOffset: 
@@ -77,10 +89,11 @@ const ScrollLinkedCard: React.FC<{
   });
 
   const blurAmount = useTransform(offsetIndex, (offset) => {
+    if (isMobile) return 0; // see `filter` below — held at 0 so nothing downstream recomputes
     if (offset < 0) return Math.abs(offset) * 2; // Blur background cards
     return 0;
   });
-  
+
   const filter = useTransform(blurAmount, (b) => `blur(${b}px)`);
 
   return (
@@ -92,7 +105,12 @@ const ScrollLinkedCard: React.FC<{
         y: useTransform(yOffset, val => `calc(-50% + ${val}px)`),
         scale,
         opacity,
-        filter,
+        // A blur radius that changes with scroll has to be re-rendered every
+        // frame, for every card behind the current one — five full-card
+        // Gaussian blurs per frame is what made this crawl on a phone. The
+        // stack still reads through scale and the 40px step; only the few
+        // pixels of each card that peek out were ever blurred.
+        filter: isMobile ? undefined : filter,
         zIndex: index, // HIGHER index means it renders ON TOP of previous cards!
         transformOrigin: 'top center',
       }}
@@ -128,6 +146,7 @@ const ScrollLinkedCard: React.FC<{
 /* ─── Services Section ─── */
 export const Services: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const isMobile = useIsMobileCanvas();
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -143,12 +162,17 @@ export const Services: React.FC = () => {
     restDelta: 0.001
   });
 
+  // A wheel arrives in jumps, so desktop is smoothed. A thumb does not: touch
+  // scrolling is already continuous, and running it through a spring only adds
+  // ~250ms of catch-up, which reads as the cards lagging behind the finger.
+  // Mobile therefore tracks the scroll position directly.
+  const progress = isMobile ? scrollYProgress : smoothProgress;
+
   // We add a small buffer at the start (0.1) so the first card doesn't fly away instantly
   // when the user arrives at the section. We also add a buffer at the end (0.9).
   const currentIndex = useTransform(
-
-    smoothProgress, 
-    [0, 0.1, 0.9, 1], 
+    progress,
+    [0, 0.1, 0.9, 1],
     [0, 0, services.length - 1, services.length - 1]
   );
 
@@ -159,7 +183,9 @@ export const Services: React.FC = () => {
       className="relative z-10 bg-black"
       // Canvas-space viewport heights — raw `vh` would be scaled twice by the
       // stage zoom and make the scroll track the wrong length.
-      style={{ height: `calc(${services.length * 90} * var(--vh))` }}
+      style={{
+        height: `calc(${services.length * TRACK_PER_CARD[isMobile ? 'mobile' : 'desktop']} * var(--vh))`,
+      }}
     >
 
       <div className="sticky top-0 h-[calc(100*var(--vh))] w-full overflow-hidden">
@@ -184,6 +210,7 @@ export const Services: React.FC = () => {
               service={service}
               index={index}
               currentIndex={currentIndex}
+              isMobile={isMobile}
             />
           ))}
         </div>

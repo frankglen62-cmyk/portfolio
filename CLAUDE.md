@@ -262,6 +262,37 @@ GSAP ScrollTrigger caches pixel measurements. `App.tsx` subscribes to
 whenever the stage rescales — without it, resizing the window leaves the About
 panel and other scroll-driven elements stuck at stale progress.
 
+## What a phone can afford to animate
+
+Desktop and mobile run the same components, but a phone does not have the fill
+rate to keep up with effects that look free on a laptop. Three of them were
+making the two card sections stutter, and each is worth recognising before it is
+reintroduced. Split on `useIsMobileCanvas()` / `[data-canvas="mobile"]` — never
+on window width.
+
+- **A blur whose radius changes with scroll is the most expensive thing here.**
+  A Gaussian blur is re-rendered whenever its radius changes, so
+  `filter: blur()` driven by scroll progress means a full-card blur *per
+  background card, per frame*. Services now applies it on desktop only.
+- **`backdrop-filter` is charged per element, per frame, even when it is
+  invisible.** The Tools chips had one each — eight on screen at rest, fifteen
+  more inside an open card — all recomputed while a card resized. Off on mobile.
+- **Animating layout (`width` / `flex-basis`) is a per-frame layout + paint.**
+  The Tools accordion has to, so mobile shortens it to `MOBILE_OPEN_MS` and
+  transitions *only* those two properties. Anything transitioning alongside it
+  is one more property checked every frame of an already expensive animation.
+
+Two related traps in the same sections:
+
+- **A spring on scroll progress is latency.** A wheel arrives in jumps and wants
+  smoothing; a thumb does not. Mobile reads `scrollYProgress` directly, or the
+  cards visibly trail the finger — which reads as lag, not smoothness.
+- **Never scroll to a position measured mid-animation.** The Tools gallery used
+  to wait 120ms and then read `card.offsetLeft` while the widths were still
+  moving, so it chased a stale target. Every collapsed card is
+  `MOBILE_CARD_WIDTH` wide, so the destination is `index * (width + gap)` —
+  known before the animation starts, and issued in the same tick.
+
 ## The video-in-text title (`src/components/ui/video-text.tsx`)
 
 "MY PROJECT" is a video showing through SVG-masked text. Two rules keep its
